@@ -31,6 +31,7 @@ import live_p2p_chat
 import airgap_crypto
 import updater
 import military_audit
+import steganography
 from military_vault import VaultSecurityError
 
 ctk.set_appearance_mode("Dark")
@@ -43,7 +44,7 @@ class AegisVaultApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("AegisVault 3.5 - Military Cryptographic Suite & P2P")
+        self.title("AegisVault 3.5.4 - Military Cryptographic Suite & P2P")
         self.geometry("1120x760")
         self.minsize(980, 660)
 
@@ -80,6 +81,8 @@ class AegisVaultApp(ctk.CTk):
         self.bind_all("<Key>", self._on_user_interaction)
         self.bind_all("<Motion>", self._on_user_interaction)
         self.bind_all("<Button>", self._on_user_interaction)
+        self.bind_all("<Control-Shift-Key-L>", lambda e: self.lock_vault(reason="Emergency Panic Lock Triggered"))
+        self.bind_all("<Control-Shift-l>", lambda e: self.lock_vault(reason="Emergency Panic Lock Triggered"))
 
         self.check_vault_status()
         self._start_inactivity_timer()
@@ -501,6 +504,15 @@ class AegisVaultApp(ctk.CTk):
         )
         info_txt.pack(side="bottom", pady=2)
 
+        panic_lbl = ctk.CTkLabel(
+            sidebar,
+            text=get_text("panic_hotkey_hint"),
+            font=ctk.CTkFont(size=10, weight="bold"),
+            text_color="#ef4444",
+            justify="center"
+        )
+        panic_lbl.pack(side="bottom", pady=(0, 4))
+
         # Right Content Area
         self.main_content = ctk.CTkFrame(self.container, fg_color="#020617")
         self.main_content.grid(row=0, column=1, sticky="nsew")
@@ -601,7 +613,8 @@ class AegisVaultApp(ctk.CTk):
                 threading.Thread(target=lambda: updater.apply_executable_update(down_url), daemon=True).start()
                 messagebox.showinfo("Downloading", "Update is downloading, application will restart automatically.")
         else:
-            messagebox.showinfo("Update Status", f"Running the latest version (v{updater.CURRENT_VERSION}).\n{notes}")
+            if messagebox.askyesno("Update Status", f"{notes}\n\nGitHub Releases sayfasını tarayıcıda açmak ister misiniz?"):
+                updater.open_github_releases_page()
 
     # =========================================================================
     # 3. VAULT VIEW & ENCRYPTED FILE LOCKER
@@ -622,6 +635,28 @@ class AegisVaultApp(ctk.CTk):
 
         btn_grp = ctk.CTkFrame(top_controls, fg_color="transparent")
         btn_grp.grid(row=0, column=1, sticky="e")
+
+        backup_btn = ctk.CTkButton(
+            btn_grp,
+            text=get_text("btn_backup_vault"),
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="#334155",
+            hover_color="#475569",
+            height=36,
+            command=self._backup_vault_to_file
+        )
+        backup_btn.pack(side="left", padx=4)
+
+        restore_btn = ctk.CTkButton(
+            btn_grp,
+            text=get_text("btn_restore_vault"),
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="#334155",
+            hover_color="#475569",
+            height=36,
+            command=self._restore_vault_from_file
+        )
+        restore_btn.pack(side="left", padx=4)
 
         add_file_btn = ctk.CTkButton(
             btn_grp,
@@ -822,6 +857,76 @@ class AegisVaultApp(ctk.CTk):
             messagebox.showinfo("Success", get_text("vault_file_exported_success", fname=fname, dest=dest))
         except Exception as e:
             messagebox.showerror("Error", get_text("vault_file_export_err", err=str(e)))
+
+    def _backup_vault_to_file(self):
+        """Exports the active encrypted vault file to a user-selected backup location."""
+        v_file, d_file = vault_storage.get_profile_files(self.selected_profile)
+        source_file = d_file if self.is_decoy else v_file
+        if not os.path.exists(source_file):
+            messagebox.showerror("Error", "Vault file does not exist on disk!")
+            return
+
+        default_name = f"AegisVault_Backup_{self.selected_profile}_{time.strftime('%Y%m%d_%H%M%S')}.mvat"
+        dest = filedialog.asksaveasfilename(
+            initialfile=default_name,
+            defaultextension=".mvat",
+            filetypes=[("AegisVault Backup", "*.mvat"), ("All Files", "*.*")],
+            title=get_text("vault_backup_title")
+        )
+        if not dest:
+            return
+
+        try:
+            with open(source_file, "rb") as f_src:
+                raw_data = f_src.read()
+            with open(dest, "wb") as f_dst:
+                f_dst.write(raw_data)
+            messagebox.showinfo("Success", get_text("vault_backup_success", dest=dest))
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to backup vault: {e}")
+
+    def _restore_vault_from_file(self):
+        """Restores or imports a vault profile from a user-selected .mvat backup."""
+        fpath = filedialog.askopenfilename(
+            title=get_text("vault_restore_title"),
+            filetypes=[("AegisVault Backup", "*.mvat"), ("All Files", "*.*")]
+        )
+        if not fpath:
+            return
+
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                armored = f.read()
+
+            can_decrypt_with_current = False
+            decrypted_data = None
+            try:
+                raw_b = vault_storage.MilitaryVault.decrypt(armored, self.effective_password or self.master_password)
+                decrypted_data = json.loads(raw_b.decode("utf-8"))
+                can_decrypt_with_current = True
+            except Exception:
+                can_decrypt_with_current = False
+
+            base_name = os.path.splitext(os.path.basename(fpath))[0]
+            clean_name = base_name.replace("AegisVault_Backup_", "").replace("AegisVault_", "")
+
+            if can_decrypt_with_current:
+                v_file, d_file = vault_storage.get_profile_files(self.selected_profile)
+                target_file = d_file if self.is_decoy else v_file
+                with open(target_file, "w", encoding="utf-8") as f_out:
+                    f_out.write(armored)
+                self.vault_data = decrypted_data
+                self._render_vault_cards()
+                messagebox.showinfo("Success", get_text("vault_restore_success", profile=self.selected_profile))
+            else:
+                vault_storage.ensure_profiles_dir()
+                import_name = f"Import_{clean_name}"[:24]
+                dest_file = os.path.join(vault_storage.PROFILES_DIR, f"{import_name}.mvat")
+                with open(dest_file, "w", encoding="utf-8") as f_out:
+                    f_out.write(armored)
+                messagebox.showinfo("Success", get_text("vault_restore_success", profile=import_name))
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to restore vault backup: {e}")
 
     def _toggle_reveal_secret(self, item_id: str):
         if item_id in self.revealed_secrets:
@@ -1455,6 +1560,7 @@ class AegisVaultApp(ctk.CTk):
         tabview.grid(row=1, column=0, sticky="nsew")
         tab_tx = tabview.add(get_text("tab_airgap_tx"))
         tab_rx = tabview.add(get_text("tab_airgap_rx"))
+        tab_stego = tabview.add(get_text("tab_airgap_stego"))
 
         # --- TAB 1: TRANSMITTER (TX) ---
         tab_tx.grid_columnconfigure(0, weight=1)
@@ -1567,6 +1673,117 @@ class AegisVaultApp(ctk.CTk):
 
         decrypt_btn = ctk.CTkButton(rx_frame, text=get_text("airgap_btn_decrypt"), font=ctk.CTkFont(size=13, weight="bold"), fg_color="#059669", hover_color="#047857", height=40, command=do_decrypt_qr)
         decrypt_btn.pack(fill="x")
+
+        # --- TAB 3: IMAGE STEGANOGRAPHY (LSB) ---
+        tab_stego.grid_columnconfigure(0, weight=1)
+        tab_stego.grid_columnconfigure(1, weight=1)
+
+        # Left Column: Embed
+        stego_left = ctk.CTkFrame(tab_stego, fg_color="transparent")
+        stego_left.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+        ctk.CTkLabel(stego_left, text=get_text("stego_embed_title"), font=ctk.CTkFont(size=13, weight="bold"), text_color="#38bdf8").pack(anchor="w", pady=(0, 6))
+
+        ctk.CTkLabel(stego_left, text=get_text("stego_cover_label"), font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(2, 2))
+        cover_row = ctk.CTkFrame(stego_left, fg_color="transparent")
+        cover_row.pack(fill="x", pady=(0, 8))
+        cover_path_entry = ctk.CTkEntry(cover_row, placeholder_text="C:/path/to/image.png", height=32)
+        cover_path_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
+
+        def choose_cover_img():
+            f = filedialog.askopenfilename(
+                title=get_text("stego_cover_label"),
+                filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp")]
+            )
+            if f:
+                cover_path_entry.delete(0, "end")
+                cover_path_entry.insert(0, f)
+
+        choose_cover_btn = ctk.CTkButton(cover_row, text=get_text("stego_btn_choose_img"), width=120, height=32, command=choose_cover_img)
+        choose_cover_btn.pack(side="right")
+
+        ctk.CTkLabel(stego_left, text=get_text("stego_secret_label"), font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(2, 2))
+        stego_secret_in = ctk.CTkTextbox(stego_left, height=90, font=ctk.CTkFont(family="Consolas", size=11))
+        stego_secret_in.pack(fill="x", pady=(0, 8))
+
+        ctk.CTkLabel(stego_left, text=get_text("stego_pass_label"), font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(2, 2))
+        stego_embed_pass = ctk.CTkEntry(stego_left, placeholder_text=get_text("stego_pass_ph"), show="*", height=32)
+        stego_embed_pass.pack(fill="x", pady=(0, 12))
+
+        def do_embed_secret():
+            cov = cover_path_entry.get().strip()
+            sec = stego_secret_in.get("1.0", "end").strip()
+            if not cov or not os.path.exists(cov):
+                messagebox.showerror("Error", "Please select a valid cover image!")
+                return
+            if not sec:
+                messagebox.showerror("Error", "Please enter the secret payload to embed!")
+                return
+            dest = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=[("PNG Image", "*.png")],
+                title=get_text("stego_btn_embed")
+            )
+            if not dest:
+                return
+            pw = stego_embed_pass.get().strip() or None
+            try:
+                out = steganography.embed_secret_in_image(cov, sec, pw, dest)
+                messagebox.showinfo("Success", get_text("stego_embed_success", dest=out))
+            except Exception as e:
+                messagebox.showerror("Error", f"Steganography failed: {e}")
+
+        embed_btn = ctk.CTkButton(stego_left, text=get_text("stego_btn_embed"), font=ctk.CTkFont(size=12, weight="bold"), fg_color="#059669", hover_color="#047857", height=38, command=do_embed_secret)
+        embed_btn.pack(fill="x")
+
+        # Right Column: Extract
+        stego_right = ctk.CTkFrame(tab_stego, fg_color="transparent")
+        stego_right.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+
+        ctk.CTkLabel(stego_right, text=get_text("stego_extract_title"), font=ctk.CTkFont(size=13, weight="bold"), text_color="#4ade80").pack(anchor="w", pady=(0, 6))
+
+        ctk.CTkLabel(stego_right, text=get_text("stego_stego_label"), font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(2, 2))
+        stego_row = ctk.CTkFrame(stego_right, fg_color="transparent")
+        stego_row.pack(fill="x", pady=(0, 8))
+        stego_path_entry = ctk.CTkEntry(stego_row, placeholder_text="C:/path/to/stego.png", height=32)
+        stego_path_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
+
+        def choose_stego_img():
+            f = filedialog.askopenfilename(
+                title=get_text("stego_stego_label"),
+                filetypes=[("PNG Image", "*.png"), ("All Files", "*.*")]
+            )
+            if f:
+                stego_path_entry.delete(0, "end")
+                stego_path_entry.insert(0, f)
+
+        choose_stego_btn = ctk.CTkButton(stego_row, text=get_text("stego_btn_choose_img"), width=120, height=32, command=choose_stego_img)
+        choose_stego_btn.pack(side="right")
+
+        ctk.CTkLabel(stego_right, text=get_text("stego_decrypt_pass_label"), font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(2, 2))
+        stego_extract_pass = ctk.CTkEntry(stego_right, placeholder_text=get_text("stego_decrypt_pass_ph"), show="*", height=32)
+        stego_extract_pass.pack(fill="x", pady=(0, 8))
+
+        ctk.CTkLabel(stego_right, text=get_text("stego_result_label"), font=ctk.CTkFont(size=11, weight="bold")).pack(anchor="w", pady=(2, 2))
+        stego_res_box = ctk.CTkTextbox(stego_right, height=90, font=ctk.CTkFont(family="Consolas", size=11))
+        stego_res_box.pack(fill="x", pady=(0, 8))
+
+        def do_extract_secret():
+            steg_p = stego_path_entry.get().strip()
+            if not steg_p or not os.path.exists(steg_p):
+                messagebox.showerror("Error", "Please select a valid stego PNG image!")
+                return
+            pw = stego_extract_pass.get().strip() or None
+            try:
+                recovered = steganography.extract_secret_from_image(steg_p, pw)
+                stego_res_box.delete("1.0", "end")
+                stego_res_box.insert("1.0", recovered)
+                messagebox.showinfo("Success", get_text("stego_extract_success"))
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to extract secret: {e}")
+
+        extract_btn = ctk.CTkButton(stego_right, text=get_text("stego_btn_extract"), font=ctk.CTkFont(size=12, weight="bold"), fg_color="#0284c7", hover_color="#0369a1", height=38, command=do_extract_secret)
+        extract_btn.pack(fill="x")
 
     # =========================================================================
     # 7. SHAMIR'S SECRET SHARING (SSS)

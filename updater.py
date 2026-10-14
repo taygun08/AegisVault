@@ -8,11 +8,17 @@ import urllib.request
 import os
 import sys
 import subprocess
+import webbrowser
 from typing import Tuple, Optional, Dict, Any
 
-CURRENT_VERSION = "3.5.0"
+CURRENT_VERSION = "3.5.4"
 # Default GitHub repository slug
 DEFAULT_REPO = "yiitpepek/AegisVault"
+
+
+def open_github_releases_page(repo_slug: str = DEFAULT_REPO):
+    """Opens the GitHub Releases creation/view page in the default web browser."""
+    webbrowser.open(f"https://github.com/{repo_slug}/releases")
 
 
 def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, str, str]:
@@ -43,15 +49,21 @@ def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, s
 
                 if tag_name and tag_name > CURRENT_VERSION and download_url:
                     return True, tag_name, download_url, body
-                return False, tag_name or CURRENT_VERSION, "", "You are running the latest version."
+                return False, tag_name or CURRENT_VERSION, "", f"En güncel sürümü kullanıyorsunuz (v{CURRENT_VERSION})."
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            return False, CURRENT_VERSION, "", "No public GitHub Release found yet or repository is private."
-        return False, CURRENT_VERSION, "", f"GitHub connection error (HTTP {e.code}): {e.reason}"
+            # 404 on /releases/latest means no release has been published yet
+            return (
+                False,
+                CURRENT_VERSION,
+                "",
+                f"GitHub deponuz erişilebilir ancak henüz bir 'Release' (Sürüm) paketi yayınlanmadı.\n\nGitHub üzerinde 'Create a new release' butonuna basarak v{CURRENT_VERSION} etiketini ve derlenen AegisVault.exe dosyasını yayınlayabilirsiniz."
+            )
+        return False, CURRENT_VERSION, "", f"GitHub bağlantı hatası (HTTP {e.code}): {e.reason}"
     except Exception as e:
-        return False, CURRENT_VERSION, "", f"Unable to check GitHub updates (offline or network error): {e}"
+        return False, CURRENT_VERSION, "", f"GitHub kontrolü yapılamadı (Çevrimdışı veya ağ hatası): {e}"
 
-    return False, CURRENT_VERSION, "", "No updates found."
+    return False, CURRENT_VERSION, "", "Güncelleme bulunamadı."
 
 
 def apply_executable_update(download_url: str) -> bool:

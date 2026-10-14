@@ -12,7 +12,7 @@ LANGUAGES = {
 TRANSLATIONS = {
     "tr": {
         # App Header & Navigation
-        "app_title": "AegisVault 3.5 - Askeri Düzey Güvenlik & Kripto Ekosistemi",
+        "app_title": "AegisVault 3.5.4 - Askeri Düzey Güvenlik & Kripto Ekosistemi",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Destekli Güvenlik Kasası",
         "status_active": "● AES-256-GCM | AKTİF",
         "status_decoy": "● AES-256-GCM | AKTİF",
@@ -21,13 +21,14 @@ TRANSLATIONS = {
         "nav_vault": "🔑 Güvenli Kasa",
         "nav_portfolio": "📊 Kripto Bakiye & Fiyat",
         "nav_p2p_chat": "💬 Canlı P2P Güvenli Sohbet",
-        "nav_airgap": "📲 Hava Boşluklu (Air-Gap) QR",
+        "nav_airgap": "📲 Hava Boşluğu & Steganografi",
         "nav_shamir": "🧩 Shamir (SSS) Yedekleme",
         "nav_bip39": "🔍 BIP-39 Seed Analiz",
         "nav_audit": "📜 Askeri Olay Günlüğü (Audit)",
         "nav_lock": "🔒 Kasayı Kilitle",
         "btn_check_update": "⚡ Güncellemeleri Denetle",
         "inactivity_notice": "⏱️ 2 dk hareketsizlikte otomatik kilitlenir.",
+        "panic_hotkey_hint": "⌨️ Ctrl+Shift+L: Acil Kilit",
         
         # Dashboard & Vault View
         "search_placeholder": "🔍 Başlık veya kategoriye göre filtrele...",
@@ -35,6 +36,8 @@ TRANSLATIONS = {
         "btn_add_secret": "➕ Yeni Veri Ekle",
         "btn_add_file": "📁 Şifreli Dosya Ekle",
         "btn_export_file": "💾 Çöz & Dışa Aktar",
+        "btn_backup_vault": "💾 Kasayı Yedekle",
+        "btn_restore_vault": "📥 Yedekten Geri Yükle",
         "empty_vault_msg": "Henüz kayıtlı bir veri bulunamadı.\n'Yeni Veri Ekle' veya 'Şifreli Dosya Ekle' butonuna basarak ilk kaydınızı oluşturun.",
         "btn_show": "👁️ Göster",
         "btn_hide": "👁️ Gizle",
@@ -49,6 +52,10 @@ TRANSLATIONS = {
         "vault_file_export_title": "Şifreli Dosyayı Çözüp Kaydedeceğiniz Konumu Seçin",
         "vault_file_exported_success": "'{fname}' başarıyla çözüldü ve diske kaydedildi:\n{dest}",
         "vault_file_export_err": "Dosya dışa aktarılamadı: {err}",
+        "vault_backup_title": "Yedek Kasa Dosyasını Kaydedin (.mvat)",
+        "vault_backup_success": "Kasa yedeği başarıyla dışa aktarıldı:\n{dest}",
+        "vault_restore_title": "Geri Yüklenecek Kasa Dosyasını Seçin (.mvat)",
+        "vault_restore_success": "'{profile}' profili başarıyla içe aktarıldı! Profil listenizden seçip kilidini açabilirsiniz.",
         
         # Secret Categories
         "cat_seed": "Bitcoin / Kripto Seed",
@@ -144,11 +151,12 @@ TRANSLATIONS = {
         "chat_you": "Siz",
         "chat_burn_badge": " ⏱️ [KENDİ KENDİNİ İMHA EDİYOR - 30 SN]",
         
-        # Airgap Optical QR
-        "airgap_title": "📲 Hava Boşluklu (Air-Gapped) Askeri Optik İletişim",
-        "airgap_desc": "💡 Bu Ne İşe Yarar?\nİnternetin, Wi-Fi'ın ve kabloların tamamen yasak olduğu çok gizli ve izole ortamlarda (Air-Gapped), veriyi AES-256-GCM ile zırhlayıp ekrandaki optik QR kod üzerinden diğer cihazlara aktarır.",
+        # Airgap & Steganography
+        "airgap_title": "📲 Hava Boşluklu İletişim & Gizli Resim Steganografisi",
+        "airgap_desc": "💡 Bu Ne İşe Yarar?\nİnternetin yasak olduğu izole ortamlarda veriyi optik QR kodlarla veya sıradan bir fotoğrafın pikselleri içine (LSB Steganografi) AES-256-GCM ile görünmez şekilde gizleyerek aktarmanızı sağlar.",
         "tab_airgap_tx": "📤 Şifreli QR Verici (Transmit)",
         "tab_airgap_rx": "📥 QR Kod Alıcı / Çözücü (Receive)",
+        "tab_airgap_stego": "🖼️ Resim İçi Gizleme (Steganografi)",
         "airgap_tx_secret_label": "Aktarılacak Gizli Metin / Seed / Koordinat:",
         "airgap_tx_pass_label": "AES-256-GCM Şifreleme Parolası (İsteğe Bağlı):",
         "airgap_tx_pass_ph": "Boş bırakılırsa düz metin QR üretilir...",
@@ -164,6 +172,23 @@ TRANSLATIONS = {
         "airgap_qr_saved": "QR Kod başarıyla kaydedildi:\n{dest}",
         "airgap_qr_loaded": "Görselden {count} karakterlik veri başarıyla okundu!",
         "airgap_decrypt_success": "Hava boşluklu veri başarıyla çözüldü ve bütünlüğü doğrulandı!",
+        
+        # Steganography Keys
+        "stego_embed_title": "📥 Fotoğraf İçine Veri Gizleme (LSB Steganografi)",
+        "stego_cover_label": "Taşıyıcı Fotoğraf Seçin (PNG / JPG / BMP):",
+        "stego_btn_choose_img": "🖼️ Fotoğraf Seç...",
+        "stego_secret_label": "Fotoğraf İçine Gizlenecek Metin / Seed Phrase:",
+        "stego_pass_label": "AES-256-GCM Şifreleme Parolası (İsteğe Bağlı):",
+        "stego_pass_ph": "Boş bırakılırsa şifresiz gömülür...",
+        "stego_btn_embed": "🔒 Veriyi Gizle ve Yeni Resim Olarak Kaydet (PNG)",
+        "stego_embed_success": "Veri başarıyla görsel piksellerine gömüldü:\n{dest}\n\nBu resim dışarıdan bakıldığında sıradan bir fotoğraf gibi görünür!",
+        "stego_extract_title": "📤 Fotoğraf İçindeki Gizli Veriyi Çıkar",
+        "stego_stego_label": "Veri Gizlenmiş Fotoğrafı Seçin (PNG):",
+        "stego_decrypt_pass_label": "AES-256-GCM Çözme Parolası:",
+        "stego_decrypt_pass_ph": "Şifreli ise parolayı girin...",
+        "stego_btn_extract": "🔓 Fotoğraftaki Gizli Veriyi Çıkar & Çöz",
+        "stego_result_label": "Fotoğraftan Çıkarılan Gizli Veri:",
+        "stego_extract_success": "Gizli veri başarıyla fotoğraftan çıkarıldı ve doğrulandı!",
         
         # BIP-39 Seed Analyzer
         "bip39_title": "🔍 BIP-39 Tohum Analizi",
@@ -192,7 +217,7 @@ TRANSLATIONS = {
     
     "en": {
         # App Header & Navigation
-        "app_title": "AegisVault 3.5 - Military Security & Crypto Suite",
+        "app_title": "AegisVault 3.5.4 - Military Security & Crypto Suite",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Encrypted Vault",
         "status_active": "● AES-256-GCM | ACTIVE",
         "status_decoy": "● AES-256-GCM | ACTIVE",
@@ -201,13 +226,14 @@ TRANSLATIONS = {
         "nav_vault": "🔑 Secure Vault",
         "nav_portfolio": "📊 Crypto Balances & Prices",
         "nav_p2p_chat": "💬 Live P2P Encrypted Chat",
-        "nav_airgap": "📲 Air-Gapped Optical QR",
+        "nav_airgap": "📲 Air-Gap & Steganography",
         "nav_shamir": "🧩 Shamir (SSS) Backup",
         "nav_bip39": "🔍 BIP-39 Seed Analyzer",
         "nav_audit": "📜 Military Audit Trail (Hash-Chain)",
         "nav_lock": "🔒 Lock Vault",
         "btn_check_update": "⚡ Check for Updates",
         "inactivity_notice": "⏱️ Auto-locks after 2 min of inactivity.",
+        "panic_hotkey_hint": "⌨️ Ctrl+Shift+L: Panic Lock",
         
         # Dashboard & Vault View
         "search_placeholder": "🔍 Filter by title or category...",
@@ -215,6 +241,8 @@ TRANSLATIONS = {
         "btn_add_secret": "➕ Add New Secret",
         "btn_add_file": "📁 Add Encrypted File",
         "btn_export_file": "💾 Decrypt & Export File",
+        "btn_backup_vault": "💾 Backup Vault",
+        "btn_restore_vault": "📥 Restore Backup",
         "empty_vault_msg": "No saved records found yet.\nClick 'Add New Secret' or 'Add Encrypted File' to store your data.",
         "btn_show": "👁️ Show",
         "btn_hide": "👁️ Hide",
@@ -229,6 +257,10 @@ TRANSLATIONS = {
         "vault_file_export_title": "Select Destination to Save Decrypted File",
         "vault_file_exported_success": "'{fname}' successfully decrypted and saved to disk:\n{dest}",
         "vault_file_export_err": "Failed to export file: {err}",
+        "vault_backup_title": "Save Encrypted Vault Backup (.mvat)",
+        "vault_backup_success": "Vault backup successfully exported:\n{dest}",
+        "vault_restore_title": "Select Vault File to Restore (.mvat)",
+        "vault_restore_success": "Profile '{profile}' successfully imported! You can now select it from profiles and unlock.",
         
         # Secret Categories
         "cat_seed": "Bitcoin / Crypto Seed",
@@ -324,11 +356,12 @@ TRANSLATIONS = {
         "chat_you": "You",
         "chat_burn_badge": " ⏱️ [SELF-DESTRUCTING - 30 SEC]",
         
-        # Airgap Optical QR
-        "airgap_title": "📲 Air-Gapped Military Optical Communication",
-        "airgap_desc": "💡 How Does This Work?\nIn highly classified and air-gapped facilities where all network cables and Wi-Fi are strictly prohibited, transmits AES-256-GCM encrypted data via optical high-density QR codes.",
+        # Airgap & Steganography
+        "airgap_title": "📲 Air-Gapped Optical QR & Image Steganography",
+        "airgap_desc": "💡 How Does This Work?\nIn highly classified and air-gapped facilities where network cables and Wi-Fi are prohibited, transmits AES-256-GCM encrypted data via optical QR codes or invisibly hides secrets within pixels of ordinary photographs (LSB Steganography).",
         "tab_airgap_tx": "📤 Transmit Encrypted QR",
         "tab_airgap_rx": "📥 Receive & Decrypt QR",
+        "tab_airgap_stego": "🖼️ Image Steganography",
         "airgap_tx_secret_label": "Secret Text / Seed / Coordinates to Transmit:",
         "airgap_tx_pass_label": "AES-256-GCM Encryption Key (Optional):",
         "airgap_tx_pass_ph": "Leave empty for unencrypted plain QR...",
@@ -344,6 +377,23 @@ TRANSLATIONS = {
         "airgap_qr_saved": "QR Code successfully saved:\n{dest}",
         "airgap_qr_loaded": "Successfully decoded {count} characters from image!",
         "airgap_decrypt_success": "Air-gapped data decrypted and integrity verified!",
+        
+        # Steganography Keys
+        "stego_embed_title": "📥 Embed Hidden Secret into Photo (LSB Steganography)",
+        "stego_cover_label": "Select Cover Photo (PNG / JPG / BMP):",
+        "stego_btn_choose_img": "🖼️ Choose Photo...",
+        "stego_secret_label": "Secret Text / Seed Phrase to Embed:",
+        "stego_pass_label": "AES-256-GCM Encryption Key (Optional):",
+        "stego_pass_ph": "Leave empty for unencrypted embedding...",
+        "stego_btn_embed": "🔒 Encrypt & Save as Steganographic PNG",
+        "stego_embed_success": "Secret successfully embedded into image pixels:\n{dest}\n\nTo any observer, this image appears as an ordinary photograph!",
+        "stego_extract_title": "📤 Extract Hidden Secret from Photo",
+        "stego_stego_label": "Select Steganographic Photo (PNG):",
+        "stego_decrypt_pass_label": "AES-256-GCM Decryption Key:",
+        "stego_decrypt_pass_ph": "Enter passkey if encrypted...",
+        "stego_btn_extract": "🔓 Extract & Decrypt Secret from Photo",
+        "stego_result_label": "Extracted Secret Data:",
+        "stego_extract_success": "Secret data extracted and verified successfully!",
         
         # BIP-39 Seed Analyzer
         "bip39_title": "🔍 BIP-39 Seed Phrase Analysis",
@@ -372,7 +422,7 @@ TRANSLATIONS = {
     
     "ru": {
         # App Header & Navigation
-        "app_title": "AegisVault 3.5 - Военная Безопасность и Криптосистема",
+        "app_title": "AegisVault 3.5.4 - Военная Безопасность и Криптосистема",
         "tagline": "Шифрованное хранилище AES-256-GCM + scrypt (BIP-38)",
         "status_active": "● AES-256-GCM | АКТИВНО",
         "status_decoy": "● AES-256-GCM | АКТИВНО",
@@ -381,13 +431,14 @@ TRANSLATIONS = {
         "nav_vault": "🔑 Безопасное хранилище",
         "nav_portfolio": "📊 Баланс и Цены Криптовалют",
         "nav_p2p_chat": "💬 Живой P2P Зашифрованный Чат",
-        "nav_airgap": "📲 Оптический QR (Air-Gap)",
+        "nav_airgap": "📲 Оптический QR & Стеганография",
         "nav_shamir": "🧩 Разделение Шамира (SSS)",
         "nav_bip39": "🔍 Анализ BIP-39 Seed",
         "nav_audit": "📜 Военный Журнал Аудита (Audit)",
         "nav_lock": "🔒 Заблокировать",
         "btn_check_update": "⚡ Проверить обновления",
         "inactivity_notice": "⏱️ Автоблокировка через 2 мин бездействия.",
+        "panic_hotkey_hint": "⌨️ Ctrl+Shift+L: Быстрая блокировка",
         
         # Dashboard & Vault View
         "search_placeholder": "🔍 Поиск по названию или категории...",
@@ -395,6 +446,8 @@ TRANSLATIONS = {
         "btn_add_secret": "➕ Добавить запись",
         "btn_add_file": "📁 Зашифровать файл",
         "btn_export_file": "💾 Расшифровать и выгрузить",
+        "btn_backup_vault": "💾 Резервная копия",
+        "btn_restore_vault": "📥 Восстановить из копии",
         "empty_vault_msg": "Записей пока нет.\nНажмите 'Добавить запись' или 'Зашифровать файл', чтобы сохранить данные.",
         "btn_show": "👁️ Показать",
         "btn_hide": "👁️ Скрыть",
@@ -409,6 +462,10 @@ TRANSLATIONS = {
         "vault_file_export_title": "Выберите место для сохранения расшифрованного файла",
         "vault_file_exported_success": "Файл '{fname}' успешно расшифрован и сохранен:\n{dest}",
         "vault_file_export_err": "Ошибка экспорта файла: {err}",
+        "vault_backup_title": "Сохранить резервную копию хранилища (.mvat)",
+        "vault_backup_success": "Резервная копия успешно экспортирована:\n{dest}",
+        "vault_restore_title": "Выберите файл хранилища для восстановления (.mvat)",
+        "vault_restore_success": "Профиль '{profile}' успешно импортирован! Выберите его в списке профилей для входа.",
         
         # Secret Categories
         "cat_seed": "Bitcoin / Крипто Seed",
@@ -504,11 +561,12 @@ TRANSLATIONS = {
         "chat_you": "Вы",
         "chat_burn_badge": " ⏱️ [САМОУНИЧТОЖЕНИЕ - 30 СЕК]",
         
-        # Airgap Optical QR
-        "airgap_title": "📲 Оптическая связь с воздушным зазором (Air-Gap)",
-        "airgap_desc": "💡 Как это работает?\nВ изолированных военных помещениях без интернета и Wi-Fi передает зашифрованные данные AES-256-GCM через оптические QR-коды на экране.",
+        # Airgap & Steganography
+        "airgap_title": "📲 Оптическая связь & Стеганография",
+        "airgap_desc": "💡 Как это работает?\nВ изолированных военных помещениях без интернета и Wi-Fi передает зашифрованные данные через оптические QR-коды или невидимо скрывает секреты внутри пикселей обычной фотографии (LSB Стеганография).",
         "tab_airgap_tx": "📤 Передать QR",
         "tab_airgap_rx": "📥 Принять и расшифровать QR",
+        "tab_airgap_stego": "🖼️ Стеганография",
         "airgap_tx_secret_label": "Секретный текст / Сид / Координаты для передачи:",
         "airgap_tx_pass_label": "Пароль шифрования AES-256-GCM (необязательно):",
         "airgap_tx_pass_ph": "Оставьте пустым для открытого QR...",
@@ -524,6 +582,23 @@ TRANSLATIONS = {
         "airgap_qr_saved": "QR-код успешно сохранен:\n{dest}",
         "airgap_qr_loaded": "Из изображения успешно считано {count} символов!",
         "airgap_decrypt_success": "Данные успешно расшифрованы, целостность подтверждена!",
+        
+        # Steganography Keys
+        "stego_embed_title": "📥 Спрятать секрет в фото (LSB Стеганография)",
+        "stego_cover_label": "Выберите изображение-носитель (PNG / JPG / BMP):",
+        "stego_btn_choose_img": "🖼️ Выбрать фото...",
+        "stego_secret_label": "Секретный текст / Сид для внедрения:",
+        "stego_pass_label": "Пароль шифрования AES-256-GCM (необязательно):",
+        "stego_pass_ph": "Оставьте пустым для открытого внедрения...",
+        "stego_btn_embed": "🔒 Зашифровать и сохранить как PNG",
+        "stego_embed_success": "Секрет успешно внедрен в пиксели изображения:\n{dest}\n\nДля любого наблюдателя это обычная фотография!",
+        "stego_extract_title": "📤 Извлечь скрытые данные из фото",
+        "stego_stego_label": "Выберите фото со скрытыми данными (PNG):",
+        "stego_decrypt_pass_label": "Пароль расшифровки AES-256-GCM:",
+        "stego_decrypt_pass_ph": "Введите пароль если зашифровано...",
+        "stego_btn_extract": "🔓 Извлечь и расшифровать секрет",
+        "stego_result_label": "Извлеченные секретные данные:",
+        "stego_extract_success": "Секретные данные успешно извлечены и подтверждены!",
         
         # BIP-39 Seed Analyzer
         "bip39_title": "🔍 Анализ BIP-39 Seed",
