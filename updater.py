@@ -12,7 +12,7 @@ from typing import Tuple, Optional, Dict, Any
 
 CURRENT_VERSION = "3.5.0"
 # Kullanıcı kendi GitHub reposunu buraya veya ayarlardan tanımlayabilir
-DEFAULT_REPO = "user/AegisVault"
+DEFAULT_REPO = "yiitpepek/AegisVault"
 
 
 def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, str, str]:
