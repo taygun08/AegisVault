@@ -1,0 +1,26 @@
+# AegisVault Git Ignore
+# Askeri Kriptografi Kuralı: Şifreli kasalar ve geçici dosyalar asla Git'e yüklenmemelidir!
+
+# Şifreli Kasa Verileri (Gizli)
+*.mvat
+*.tmp
+profiles/
+vault_data.mvat
+vault_decoy.mvat
+
+# PyInstaller & Derleme Artıkları
+build/
+dist/
+*.spec
+*.exe
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+
+# Ortam Dosyaları
+.env
+venv/
+.venv/
