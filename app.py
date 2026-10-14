@@ -50,6 +50,7 @@ class AegisVaultApp(ctk.CTk):
         self.last_activity_time = time.time()
         self.current_tab = "vault"
         self.live_prices = crypto_portfolio.DEFAULT_PRICES
+        self.p2p_session = None
 
         # FIPS 140-3 POST ve Askeri Öz-Testler
         self.post_results = military_audit.run_power_on_self_tests()
@@ -132,6 +133,7 @@ class AegisVaultApp(ctk.CTk):
         lang_menu.pack(side="right")
 
     def show_create_profile_screen(self):
+        self.clear_container()
         self._add_top_lang_selector(self.container)
 
         frame = ctk.CTkFrame(self.container, width=540, corner_radius=15, fg_color="#181a1f")
@@ -272,6 +274,7 @@ class AegisVaultApp(ctk.CTk):
         self.show_dashboard()
 
     def show_unlock_screen(self):
+        self.clear_container()
         self._add_top_lang_selector(self.container)
 
         frame = ctk.CTkFrame(self.container, width=500, corner_radius=15, fg_color="#181a1f")
@@ -541,8 +544,11 @@ class AegisVaultApp(ctk.CTk):
             self._render_guide_view(tab_container)
 
     def lock_vault(self, reason=None):
-        if self.p2p_session:
-            self.p2p_session.close()
+        if hasattr(self, "p2p_session") and self.p2p_session:
+            try:
+                self.p2p_session.close()
+            except Exception:
+                pass
             self.p2p_session = None
 
         self.master_password = None
@@ -550,6 +556,7 @@ class AegisVaultApp(ctk.CTk):
         self.vault_data = None
         self.is_decoy = False
         self.revealed_secrets.clear()
+        self.clear_container()
         self.show_unlock_screen()
         if reason:
             messagebox.showinfo("Vault Locked", reason)
