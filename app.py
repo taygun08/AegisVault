@@ -12,6 +12,7 @@ Yeni Özellikler:
 import os
 import sys
 import time
+import secrets
 import threading
 import customtkinter as ctk
 from tkinter import messagebox
@@ -987,7 +988,7 @@ class AegisVaultApp(ctk.CTk):
 
         info_card = ctk.CTkFrame(parent, fg_color="#1e1b4b", border_width=1, border_color="#3730a3", corner_radius=10)
         info_card.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        info_lbl = ctk.CTkLabel(info_card, text=get_text("p2p_chat_desc"), font=ctk.CTkFont(size=12), text_color="#c7d2fe", justify="left")
+        info_lbl = ctk.CTkLabel(info_card, text=get_text("p2p_chat_desc"), font=ctk.CTkFont(size=12), text_color="#c7d2fe", justify="left", wraplength=820)
         info_lbl.pack(padx=16, pady=10, anchor="w")
 
         chat_layout = ctk.CTkFrame(parent, fg_color="transparent")
@@ -1002,18 +1003,18 @@ class AegisVaultApp(ctk.CTk):
         self.p2p_status_lbl = ctk.CTkLabel(top_conn, text="⚪ Durum: Bağlantı yok. Bir oda adı ve şifresi girip bağlanın.", font=ctk.CTkFont(size=12, weight="bold"), text_color="#94a3b8")
         self.p2p_status_lbl.pack(padx=15, pady=(10, 4), anchor="w")
 
-        ctrl_box = ctk.CTkFrame(top_conn, fg_color="transparent")
-        ctrl_box.pack(fill="x", padx=15, pady=(0, 10))
+        ctrl_row1 = ctk.CTkFrame(top_conn, fg_color="transparent")
+        ctrl_row1.pack(fill="x", padx=15, pady=(2, 4))
 
-        nick_in = ctk.CTkEntry(ctrl_box, placeholder_text=get_text("chat_nick"), width=120, height=32)
+        nick_in = ctk.CTkEntry(ctrl_row1, placeholder_text=get_text("chat_nick"), width=120, height=32)
         nick_in.insert(0, self.selected_profile)
         nick_in.pack(side="left", padx=3)
 
-        room_in = ctk.CTkEntry(ctrl_box, placeholder_text=get_text("chat_room_name"), width=160, height=32)
+        room_in = ctk.CTkEntry(ctrl_row1, placeholder_text=get_text("chat_room_name"), width=160, height=32)
         room_in.insert(0, "som-tim-01")
         room_in.pack(side="left", padx=3)
 
-        room_key_in = ctk.CTkEntry(ctrl_box, placeholder_text=get_text("chat_room_key"), show="*", width=160, height=32)
+        room_key_in = ctk.CTkEntry(ctrl_row1, placeholder_text=get_text("chat_room_key"), show="*", width=160, height=32)
         room_key_in.insert(0, "AegisRoom2026!")
         room_key_in.pack(side="left", padx=3)
 
@@ -1022,11 +1023,27 @@ class AegisVaultApp(ctk.CTk):
 
         def on_msg_received(sender, text, ts, is_mine):
             def add_bubble():
-                bubble = ctk.CTkFrame(self.p2p_messages_box, fg_color="#0284c7" if is_mine else "#1e293b", corner_radius=8)
+                is_burn = text.startswith("[BURNT-30]:")
+                display_text = text[len("[BURNT-30]:"):].strip() if is_burn else text
+
+                bubble = ctk.CTkFrame(
+                    self.p2p_messages_box,
+                    fg_color="#0284c7" if is_mine else "#1e293b",
+                    border_width=1 if is_burn else 0,
+                    border_color="#ef4444" if is_burn else "#334155",
+                    corner_radius=8
+                )
                 bubble.pack(fill="x", pady=4, padx=8)
+
                 hdr = f"{sender} ({ts})" if not is_mine else f"Siz ({ts})"
-                ctk.CTkLabel(bubble, text=hdr, font=ctk.CTkFont(size=10, weight="bold"), text_color="#cbd5e1").pack(anchor="w", padx=10, pady=(4, 0))
-                ctk.CTkLabel(bubble, text=text, font=ctk.CTkFont(size=13), text_color="#ffffff", justify="left").pack(anchor="w", padx=10, pady=(2, 6))
+                if is_burn:
+                    hdr += " ⏱️ [KENDİ KENDİNİ İMHA EDİYOR - 30 SN]"
+                ctk.CTkLabel(bubble, text=hdr, font=ctk.CTkFont(size=10, weight="bold"), text_color="#fca5a5" if is_burn else "#cbd5e1").pack(anchor="w", padx=10, pady=(4, 0))
+                ctk.CTkLabel(bubble, text=display_text, font=ctk.CTkFont(size=13), text_color="#ffffff", justify="left").pack(anchor="w", padx=10, pady=(2, 6))
+
+                if is_burn:
+                    self.after(30000, lambda: bubble.destroy() if bubble.winfo_exists() else None)
+
             self.after(0, add_bubble)
 
         def toggle_connect():
@@ -1048,8 +1065,48 @@ class AegisVaultApp(ctk.CTk):
                 self.p2p_session.connect()
                 conn_btn.configure(text=get_text("btn_chat_disconnect"), fg_color="#dc2626", hover_color="#b91c1c")
 
-        conn_btn = ctk.CTkButton(ctrl_box, text=get_text("btn_chat_connect"), fg_color="#059669", hover_color="#047857", width=180, height=32, command=toggle_connect)
+        conn_btn = ctk.CTkButton(ctrl_row1, text=get_text("btn_chat_connect"), fg_color="#059669", hover_color="#047857", width=180, height=32, command=toggle_connect)
         conn_btn.pack(side="left", padx=6)
+
+        # İkinci Kontrol Satırı: Oda Üretici, Davet Kopyalama ve Temizleme
+        ctrl_row2 = ctk.CTkFrame(top_conn, fg_color="transparent")
+        ctrl_row2.pack(fill="x", padx=15, pady=(2, 10))
+
+        def gen_random_room():
+            prefix = secrets.choice(["harekat", "taktik-hat", "som-tim", "aegis-oda", "delta-tim", "anka-hat"])
+            num = secrets.randbelow(9000) + 1000
+            rand_room = f"{prefix}-{num}"
+            rand_key = secrets.token_urlsafe(12)
+
+            room_in.delete(0, "end")
+            room_in.insert(0, rand_room)
+            room_key_in.delete(0, "end")
+            room_key_in.insert(0, rand_key)
+            messagebox.showinfo("Oda Hazır", f"🎲 Yeni Güvenli Oda ve Askeri Parola Üretildi!\n\nOda Adı: {rand_room}\nOda Şifresi: {rand_key}\n\nŞimdi '📋 Daveti Kopyala' butonuna basarak arkadaşınıza gönderebilirsiniz.")
+
+        def copy_room_invite():
+            r = room_in.get().strip()
+            k = room_key_in.get().strip()
+            if not r or not k:
+                messagebox.showwarning("Eksik", "Lütfen önce oda adı ve şifresi belirleyin!")
+                return
+            invite = f"🛡️ AegisVault Askeri Güvenli Sohbet Daveti\n━━━━━━━━━━━━━━━━━━━━━\n📡 Oda Adı: {r}\n🔑 Oda Şifresi: {k}\n━━━━━━━━━━━━━━━━━━━━━\n(AegisVault uygulamasında bu bilgileri girip 'Odaya Bağlan' butonuna basın)."
+            self.clipboard_clear()
+            self.clipboard_append(invite)
+            messagebox.showinfo("Kopyalandı", "Oda davet bilgileri panoya kopyalandı!\nArkadaşınıza gönderip aynı bilgilerle odaya bağlanmasını sağlayabilirsiniz.")
+
+        def clear_chat():
+            for w in self.p2p_messages_box.winfo_children():
+                w.destroy()
+
+        gen_btn = ctk.CTkButton(ctrl_row2, text="🎲 Rastgele Oda Üret", font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", width=160, height=28, command=gen_random_room)
+        gen_btn.pack(side="left", padx=3)
+
+        copy_btn = ctk.CTkButton(ctrl_row2, text="📋 Daveti Kopyala", font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#4ade80", width=150, height=28, command=copy_room_invite)
+        copy_btn.pack(side="left", padx=3)
+
+        clr_btn = ctk.CTkButton(ctrl_row2, text="🧹 Sohbeti Sıfırla (Zeroize)", font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#f87171", width=170, height=28, command=clear_chat)
+        clr_btn.pack(side="left", padx=3)
 
         # Mesaj Akışı Kutusu
         self.p2p_messages_box = ctk.CTkScrollableFrame(chat_layout, fg_color="#0b1120", corner_radius=10)
@@ -1058,10 +1115,14 @@ class AegisVaultApp(ctk.CTk):
         # Alt Mesaj Gönderim Alanı
         bot_send = ctk.CTkFrame(chat_layout, fg_color="transparent")
         bot_send.grid(row=2, column=0, sticky="ew")
-        bot_send.grid_columnconfigure(0, weight=1)
+        bot_send.grid_columnconfigure(1, weight=1)
+
+        burn_var = ctk.BooleanVar(value=False)
+        burn_chk = ctk.CTkCheckBox(bot_send, text="⏱️ 30s İmha", variable=burn_var, font=ctk.CTkFont(size=11), text_color="#f87171", width=95)
+        burn_chk.grid(row=0, column=0, padx=(0, 8))
 
         msg_input = ctk.CTkEntry(bot_send, placeholder_text="Uçtan uca AES-256-GCM şifreli mesajınızı yazın...", height=40)
-        msg_input.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        msg_input.grid(row=0, column=1, sticky="ew", padx=(0, 8))
 
         def send_p2p(event=None):
             txt = msg_input.get().strip()
@@ -1070,13 +1131,14 @@ class AegisVaultApp(ctk.CTk):
             if not self.p2p_session or not self.p2p_session.is_connected:
                 messagebox.showwarning("Not Connected", "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.")
                 return
-            if self.p2p_session.send_message(txt):
+            payload_txt = f"[BURNT-30]: {txt}" if burn_var.get() else txt
+            if self.p2p_session.send_message(payload_txt):
                 msg_input.delete(0, "end")
 
         msg_input.bind("<Return>", send_p2p)
 
         send_btn = ctk.CTkButton(bot_send, text=get_text("btn_send"), fg_color="#0284c7", width=100, height=40, command=send_p2p)
-        send_btn.grid(row=0, column=1)
+        send_btn.grid(row=0, column=2)
 
     # =========================================================================
     # 6. SHAMIR'S SECRET SHARING (SSS)
