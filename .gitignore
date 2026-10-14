@@ -7,6 +7,8 @@
 profiles/
 vault_data.mvat
 vault_decoy.mvat
+audit_trail.json
+*.bat
 
 # PyInstaller & Derleme Artıkları
 build/

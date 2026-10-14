@@ -20,7 +20,9 @@
 * **🧩 Shamir's Secret Sharing (SSS):** $K$-of-$N$ threshold secret sharing over prime field $\mathbb{F}_{257}$ for paper seed backups (e.g., 3-of-5 threshold).
 * **🎭 Plausible Deniability (Duress Mode):** Secondary duress password opens an innocuous decoy vault under coercion.
 * **⏱️ Inactivity Auto-Lock:** Wipes RAM keys and auto-locks after 120 seconds of user inactivity.
-* **⚡ GitHub Auto-Updater:** One-click remote update checker and installer via GitHub Releases API.
+* **🛡️ FIPS 140-3 Power-On Self-Tests (POST):** Automated boot-up verification with official NIST SP 800-38D Known-Answer Tests (KAT) for AES-256-GCM, scrypt KDF, and CSPRNG continuous health.
+* **📜 Tamper-Evident Hash-Chained Audit Trail:** Blockchain-like cryptographic event log chaining every action with SHA-256 hashes to guarantee mathematical audit integrity.
+* **⚠️ Emergency Cryptographic Zeroization:** DoD 5220.22-M sanitization protocol overwriting cryptographic memory and vault files with multi-pass random entropy in panic/capture scenarios.
 * **🌐 Multilingual:** Full localization in 🇹🇷 Türkçe, 🇬🇧 English, and 🇷🇺 Русский.
 
 ---
