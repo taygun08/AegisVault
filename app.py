@@ -1,12 +1,14 @@
 """
-Aegis Vault 3.5 - Askeri Sınıf Kriptografik Kasa & P2P Güvenlik Ekosistemi
-Yeni Özellikler:
-1. 👤 Çoklu Kullanıcı Profilleri (Her kullanıcı/bilgisayar için bağımsız şifre ve kasa)
-2. 🔒 Cihaz Donanım Kilitleme (Hardware-Bound Vault - Başka PC'de açılamaz)
-3. 💬 Canlı P2P Güvenli Sohbet Ağı (Doğrudan İki Bilgisayar Arası AES-256-GCM Soket)
-4. 📊 Blokzincir Doğrulamalı Canlı Kripto Portföy (Blockchain.info API)
-5. ⚡ GitHub Otomatik Güncelleme Kontrolü (GitHub Releases API)
-6. 🌐 3 Dilli Arayüz (Türkçe, English, Русский)
+Aegis Vault 3.5 - Military Cryptographic Suite & Secure P2P Ecosystem
+Features:
+1. Multi-User Profiles (Isolated credentials and encrypted storage per user/machine)
+2. Hardware-Bound Profiles (Hardware fingerprint binding - vault cannot be opened on other PCs)
+3. Live P2P Encrypted Chat Network (Worldwide end-to-end AES-256-GCM relay)
+4. Air-Gapped Optical QR Cryptography (OpenCV computer vision + high-density QR)
+5. Blockchain-Verified Live Cold Storage Portfolio (Blockchain.info API + Binance rates)
+6. Automatic GitHub Releases Update Detection
+7. Trilingual Localization (Turkish, English, Russian)
+8. FIPS 140-3 Power-On Self-Tests (POST) and Merkle Hash-Chained Audit Trail
 """
 
 import os
@@ -36,7 +38,7 @@ ctk.set_default_color_theme("blue")
 
 
 class AegisVaultApp(ctk.CTk):
-    INACTIVITY_TIMEOUT = 120  # 2 Dakika
+    INACTIVITY_TIMEOUT = 120  # 2 minutes auto-lock timeout
 
     def __init__(self):
         super().__init__()
@@ -45,7 +47,7 @@ class AegisVaultApp(ctk.CTk):
         self.geometry("1120x760")
         self.minsize(980, 660)
 
-        # Durum Değişkenleri
+        # Core State Variables
         self.selected_profile = "Varsayılan"
         self.master_password = None
         self.effective_password = None
@@ -55,15 +57,23 @@ class AegisVaultApp(ctk.CTk):
         self.last_activity_time = time.time()
         self.current_tab = "vault"
         self.live_prices = crypto_portfolio.DEFAULT_PRICES
-        self.p2p_session = None
 
-        # FIPS 140-3 POST ve Askeri Öz-Testler
+        # Persistent P2P Chat State (Preserved across tab switches)
+        self.p2p_session = None
+        self.p2p_message_history = []  # Stores message dicts
+        self.p2p_saved_nick = ""
+        self.p2p_saved_room = "som-tim-01"
+        self.p2p_saved_key = "AegisRoom2026!"
+        self.p2p_burn_enabled = False
+        self.p2p_status_text = ""
+
+        # Run FIPS 140-3 Power-On Self-Tests
         self.post_results = military_audit.run_power_on_self_tests()
         military_audit.CryptographicAuditTrail.record_event(
-            "POST_BOOT", "System", "FIPS 140-3 Power-On Self Tests %100 Passed (NIST KAT 100%)", "INFO"
+            "POST_BOOT", "System", "FIPS 140-3 Power-On Self Tests 100% Passed (NIST KAT 100%)", "INFO"
         )
 
-        # Ana Taşıyıcı
+        # Root Container
         self.container = ctk.CTkFrame(self, corner_radius=0)
         self.container.pack(fill="both", expand=True)
 
@@ -76,14 +86,17 @@ class AegisVaultApp(ctk.CTk):
         self._start_price_fetch_thread()
 
     def _on_user_interaction(self, event=None):
+        """Resets user inactivity timer on input interaction."""
         self.last_activity_time = time.time()
 
     def _start_inactivity_timer(self):
+        """Enforces auto-lock policy after period of inactivity."""
         if self.master_password and (time.time() - self.last_activity_time > self.INACTIVITY_TIMEOUT):
             self.lock_vault(reason=get_text("inactivity_notice"))
         self.after(5000, self._start_inactivity_timer)
 
     def _start_price_fetch_thread(self):
+        """Asynchronously fetches live cryptocurrency prices in the background."""
         def worker():
             try:
                 self.live_prices = crypto_portfolio.fetch_live_prices()
@@ -92,14 +105,16 @@ class AegisVaultApp(ctk.CTk):
         threading.Thread(target=worker, daemon=True).start()
 
     def clear_container(self):
+        """Destroys all child widgets of the main container."""
         for widget in self.container.winfo_children():
             widget.destroy()
 
     def set_language_and_refresh(self, lang_choice: str):
+        """Switches active language and refreshes UI components immediately."""
         lang_code = "tr"
-        if "English" in lang_choice or "en" in lang_choice:
+        if "English" in lang_choice or "en" in lang_choice.lower():
             lang_code = "en"
-        elif "Русский" in lang_choice or "ru" in lang_choice:
+        elif "Русский" in lang_choice or "ru" in lang_choice.lower():
             lang_code = "ru"
 
         i18n.set_language(lang_code)
@@ -111,9 +126,10 @@ class AegisVaultApp(ctk.CTk):
             self.check_vault_status()
 
     # =========================================================================
-    # 1. BAŞLANGIÇ & PROFİL SEÇİCİ / GİRİŞ EKRANI
+    # 1. INITIALIZATION & PROFILE SELECTION / LOGIN SCREEN
     # =========================================================================
     def check_vault_status(self):
+        """Checks for existing profiles and presents either login or profile creation."""
         self.clear_container()
         profiles = vault_storage.list_profiles()
         if not profiles or (len(profiles) == 1 and not vault_storage.profile_exists(profiles[0])):
@@ -122,6 +138,7 @@ class AegisVaultApp(ctk.CTk):
             self.show_unlock_screen()
 
     def _add_top_lang_selector(self, parent_frame):
+        """Renders language switcher dropdown in top right corner of authentication screens."""
         lang_bar = ctk.CTkFrame(parent_frame, fg_color="transparent")
         lang_bar.pack(anchor="ne", padx=20, pady=(15, 0))
 
@@ -138,6 +155,7 @@ class AegisVaultApp(ctk.CTk):
         lang_menu.pack(side="right")
 
     def show_create_profile_screen(self):
+        """Displays initial profile creation and master password configuration screen."""
         self.clear_container()
         self._add_top_lang_selector(self.container)
 
@@ -182,7 +200,7 @@ class AegisVaultApp(ctk.CTk):
         )
         self.setup_duress_entry.pack(pady=5)
 
-        # Cihaz Donanım Kilitleme Kutusu
+        # Hardware Fingerprint Binding Checkbox
         self.hw_bind_var = ctk.BooleanVar(value=False)
         hw_chk = ctk.CTkCheckBox(
             frame,
@@ -218,11 +236,11 @@ class AegisVaultApp(ctk.CTk):
         )
         create_btn.pack(fill="x")
 
-        # Var olan profillere geri dön butonu (varsa)
+        # Back to existing profiles if any exist
         if vault_storage.list_profiles():
             cancel_btn = ctk.CTkButton(
                 btn_box,
-                text="← Mevcut Profillere Dön",
+                text=get_text("btn_back_profiles"),
                 fg_color="transparent",
                 text_color="#94a3b8",
                 hover_color="#334155",
@@ -251,16 +269,16 @@ class AegisVaultApp(ctk.CTk):
         bind_hw = self.hw_bind_var.get()
 
         if not prof:
-            messagebox.showerror("Error", "Lütfen bir profil adı giriniz!")
+            messagebox.showerror("Error", "Please enter a profile name!")
             return
         if len(p1) < 8:
-            messagebox.showerror("Error", "Parola en az 8 karakter olmalıdır!")
+            messagebox.showerror("Error", "Password must be at least 8 characters!")
             return
         if p1 != p2:
-            messagebox.showerror("Error", "Parolalar eşleşmiyor!")
+            messagebox.showerror("Error", "Passwords do not match!")
             return
         if duress and duress == p1:
-            messagebox.showerror("Error", "Tehdit parolası ana parola ile aynı olamaz!")
+            messagebox.showerror("Error", "Duress password cannot be identical to master password!")
             return
 
         self.selected_profile = prof
@@ -279,6 +297,7 @@ class AegisVaultApp(ctk.CTk):
         self.show_dashboard()
 
     def show_unlock_screen(self):
+        """Displays password entry screen for unlocking an existing vault profile."""
         self.clear_container()
         self._add_top_lang_selector(self.container)
 
@@ -302,7 +321,7 @@ class AegisVaultApp(ctk.CTk):
         )
         info_lbl.pack(pady=(0, 16), padx=25)
 
-        # Profil Seçici
+        # Profile Selector
         prof_frame = ctk.CTkFrame(frame, fg_color="transparent")
         prof_frame.pack(fill="x", padx=35, pady=4)
         ctk.CTkLabel(prof_frame, text=get_text("profile_label"), font=ctk.CTkFont(size=12, weight="bold")).pack(side="left")
@@ -336,7 +355,7 @@ class AegisVaultApp(ctk.CTk):
         )
         unlock_btn.pack(pady=10)
 
-        # Yeni Profil Ekle Butonu
+        # Add New Profile Button
         new_prof_btn = ctk.CTkButton(
             frame,
             text=get_text("btn_new_profile"),
@@ -375,9 +394,10 @@ class AegisVaultApp(ctk.CTk):
             messagebox.showerror("Error", f"Unlock error: {e}")
 
     # =========================================================================
-    # 2. ANA PANEL (DASHBOARD)
+    # 2. MAIN DASHBOARD VIEW
     # =========================================================================
     def show_dashboard(self):
+        """Constructs main application frame with sidebar navigation and active tab."""
         self.clear_container()
         self.revealed_secrets.clear()
 
@@ -385,7 +405,7 @@ class AegisVaultApp(ctk.CTk):
         self.container.grid_columnconfigure(1, weight=1)
         self.container.grid_rowconfigure(0, weight=1)
 
-        # Sol Kenar Çubuğu
+        # Left Sidebar
         sidebar = ctk.CTkFrame(self.container, width=260, corner_radius=0, fg_color="#0f172a")
         sidebar.grid(row=0, column=0, sticky="nsew")
         sidebar.grid_propagate(False)
@@ -398,7 +418,6 @@ class AegisVaultApp(ctk.CTk):
         )
         logo_lbl.pack(pady=(18, 2), padx=20)
 
-        # Aktif Profil & Güvenlik Rozeti
         prof_lbl = ctk.CTkLabel(
             sidebar,
             text=f"👤 {self.selected_profile}",
@@ -412,16 +431,18 @@ class AegisVaultApp(ctk.CTk):
         sec_badge = ctk.CTkLabel(
             sidebar, text=status_text, font=ctk.CTkFont(size=11, weight="bold"), text_color=status_color
         )
-        sec_badge.pack(pady=(2, 14))
+        sec_badge.pack(pady=(2, 10))
 
-        # FIPS 140-3 Açılış Test Rozeti
-        fips_color = "#38bdf8" if getattr(self, "post_results", {}).get("all_passed") else "#ef4444"
+        # FIPS 140-3 POST Badge
+        all_passed = getattr(self, "post_results", {}).get("all_passed", True)
+        fips_color = "#38bdf8" if all_passed else "#ef4444"
+        fips_txt = get_text("fips_badge_passed") if all_passed else get_text("fips_badge_failed")
         fips_badge = ctk.CTkLabel(
-            sidebar, text="● FIPS 140-3 POST: %100 GEÇTİ", font=ctk.CTkFont(size=10, weight="bold"), text_color=fips_color
+            sidebar, text=fips_txt, font=ctk.CTkFont(size=10, weight="bold"), text_color=fips_color
         )
         fips_badge.pack(pady=(0, 10))
 
-        # Modül Butonları
+        # Module Navigation Buttons
         nav_buttons = [
             ("vault", get_text("nav_vault")),
             ("portfolio", get_text("nav_portfolio")),
@@ -448,7 +469,7 @@ class AegisVaultApp(ctk.CTk):
             btn.pack(pady=4, padx=16, fill="x")
             self.nav_widgets[tab_key] = btn
 
-        # Alt Alan: Güncelleme, Kilit ve Süre
+        # Sidebar Bottom: Update Check, Lock Vault & Timeout Notice
         update_btn = ctk.CTkButton(
             sidebar,
             text=get_text("btn_check_update"),
@@ -481,13 +502,13 @@ class AegisVaultApp(ctk.CTk):
         )
         info_txt.pack(side="bottom", pady=2)
 
-        # Sağ İçerik Alanı
+        # Right Content Area
         self.main_content = ctk.CTkFrame(self.container, fg_color="#020617")
         self.main_content.grid(row=0, column=1, sticky="nsew")
         self.main_content.grid_rowconfigure(1, weight=1)
         self.main_content.grid_columnconfigure(0, weight=1)
 
-        # Üst Çubuk
+        # Top Bar with Tagline and Language Menu
         top_bar = ctk.CTkFrame(self.main_content, height=60, fg_color="#0b1120", corner_radius=0)
         top_bar.grid(row=0, column=0, sticky="ew")
         top_bar.grid_columnconfigure(0, weight=1)
@@ -516,6 +537,7 @@ class AegisVaultApp(ctk.CTk):
         self.render_active_tab()
 
     def switch_tab(self, tab_key: str):
+        """Switches active navigation tab without destroying background connections."""
         self.current_tab = tab_key
         for k, btn in self.nav_widgets.items():
             is_active = (k == tab_key)
@@ -526,6 +548,7 @@ class AegisVaultApp(ctk.CTk):
         self.render_active_tab()
 
     def render_active_tab(self):
+        """Renders the content view for the currently selected tab."""
         for widget in self.main_content.grid_slaves(row=1, column=0):
             widget.destroy()
 
@@ -552,6 +575,7 @@ class AegisVaultApp(ctk.CTk):
             self._render_guide_view(tab_container)
 
     def lock_vault(self, reason=None):
+        """Locks the vault, terminates live chat session, wipes state, and returns to unlock screen."""
         if hasattr(self, "p2p_session") and self.p2p_session:
             try:
                 self.p2p_session.close()
@@ -559,6 +583,7 @@ class AegisVaultApp(ctk.CTk):
                 pass
             self.p2p_session = None
 
+        self.p2p_message_history.clear()
         self.master_password = None
         self.effective_password = None
         self.vault_data = None
@@ -570,16 +595,17 @@ class AegisVaultApp(ctk.CTk):
             messagebox.showinfo("Vault Locked", reason)
 
     def _check_github_updates_ui(self):
+        """Prompts update check and installation dialog."""
         has_up, latest_ver, down_url, notes = updater.check_for_github_update()
         if has_up:
-            if messagebox.askyesno("Update Available", f"AegisVault v{latest_ver} yayında!\n\n{notes}\n\nŞimdi indirilip uygulansın mı?"):
+            if messagebox.askyesno("Update Available", f"AegisVault v{latest_ver} is available!\n\n{notes}\n\nDownload and install now?"):
                 threading.Thread(target=lambda: updater.apply_executable_update(down_url), daemon=True).start()
-                messagebox.showinfo("Downloading", "Güncelleme indiriliyor, uygulama otomatik olarak yeniden başlayacak.")
+                messagebox.showinfo("Downloading", "Update is downloading, application will restart automatically.")
         else:
-            messagebox.showinfo("Update Status", f"En güncel sürümdesiniz (v{updater.CURRENT_VERSION}).\n{notes}")
+            messagebox.showinfo("Update Status", f"Running the latest version (v{updater.CURRENT_VERSION}).\n{notes}")
 
     # =========================================================================
-    # 3. KASA GÖRÜNÜMÜ
+    # 3. VAULT VIEW & ENCRYPTED FILE LOCKER
     # =========================================================================
     def _render_vault_view(self, parent):
         parent.grid_rowconfigure(1, weight=1)
@@ -666,7 +692,12 @@ class AegisVaultApp(ctk.CTk):
             "Özel Anahtar (Private Key)": "#ef4444",
             "Kullanıcı Parolası": "#3b82f6",
             "Gizli Not": "#10b981",
-            "Şifreli Dosya / Belge": "#10b981"
+            "Şifreli Dosya / Belge": "#10b981",
+            "Bitcoin / Crypto Seed": "#f59e0b",
+            "Private Key": "#ef4444",
+            "User Password": "#3b82f6",
+            "Secret Note": "#10b981",
+            "Encrypted File / Document": "#10b981"
         }.get(category, "#8b5cf6")
 
         title_box = ctk.CTkFrame(card, fg_color="transparent")
@@ -681,7 +712,7 @@ class AegisVaultApp(ctk.CTk):
         secret_box.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
         if is_file:
-            display_text = f"📄 {item.get('file_name')} ({item.get('file_size', 0):,} Bayt - AES-256-GCM Korumalı)"
+            display_text = get_text("vault_file_display", fname=item.get('file_name'), size=item.get('file_size', 0))
             lbl_secret = ctk.CTkLabel(
                 secret_box,
                 text=display_text,
@@ -705,9 +736,9 @@ class AegisVaultApp(ctk.CTk):
         if is_file:
             export_btn = ctk.CTkButton(
                 btn_box,
-                text="💾 Çöz & Dışa Aktar",
+                text=get_text("btn_export_file"),
                 font=ctk.CTkFont(size=11, weight="bold"),
-                width=120,
+                width=135,
                 height=30,
                 fg_color="#059669",
                 hover_color="#047857",
@@ -728,7 +759,7 @@ class AegisVaultApp(ctk.CTk):
 
             copy_btn = ctk.CTkButton(
                 btn_box,
-                text="📋",
+                text=get_text("btn_copy"),
                 width=36,
                 height=30,
                 fg_color="#0284c7",
@@ -751,15 +782,15 @@ class AegisVaultApp(ctk.CTk):
 
     def open_add_file_modal(self):
         fpath = filedialog.askopenfilename(
-            title="Kasaya Eklenecek Dosyayı Seçin (PDF, Word, Excel, Resim, Anahtar)",
-            filetypes=[("Tüm Dosyalar", "*.*")]
+            title=get_text("vault_file_dialog_title"),
+            filetypes=[("All Files", "*.*")]
         )
         if not fpath:
             return
 
         fsize = os.path.getsize(fpath)
         if fsize > 15 * 1024 * 1024:
-            messagebox.showerror("Boyut Aşımı", "Kasa performansı için dosya boyutu maksimum 15 MB olmalıdır!")
+            messagebox.showerror("Error", get_text("vault_file_oversize_err"))
             return
 
         fname = os.path.basename(fpath)
@@ -772,16 +803,16 @@ class AegisVaultApp(ctk.CTk):
             title=fname,
             file_name=fname,
             file_bytes=file_bytes,
-            notes=f"Orijinal Konum: {fpath}"
+            notes=get_text("vault_file_notes_orig", path=fpath)
         )
         self._render_vault_cards()
-        messagebox.showinfo("Başarılı", f"'{fname}' dosyası AES-256-GCM ile zırhlanarak kasaya güvenle eklendi!")
+        messagebox.showinfo("Success", get_text("vault_file_added_success", fname=fname))
 
     def _export_file_item(self, item: dict):
-        fname = item.get("file_name", "dosya.bin")
+        fname = item.get("file_name", "file.bin")
         dest = filedialog.asksaveasfilename(
             initialfile=fname,
-            title="Şifreli Dosyayı Çözüp Kaydedeceğiniz Konumu Seçin"
+            title=get_text("vault_file_export_title")
         )
         if not dest:
             return
@@ -789,9 +820,9 @@ class AegisVaultApp(ctk.CTk):
             raw_b = base64.b64decode(item["file_b64"])
             with open(dest, "wb") as f:
                 f.write(raw_b)
-            messagebox.showinfo("Başarılı", f"'{fname}' başarıyla çözüldü ve diske kaydedildi:\n{dest}")
+            messagebox.showinfo("Success", get_text("vault_file_exported_success", fname=fname, dest=dest))
         except Exception as e:
-            messagebox.showerror("Hata", f"Dosya dışa aktarılamadı: {e}")
+            messagebox.showerror("Error", get_text("vault_file_export_err", err=str(e)))
 
     def _toggle_reveal_secret(self, item_id: str):
         if item_id in self.revealed_secrets:
@@ -828,7 +859,7 @@ class AegisVaultApp(ctk.CTk):
 
         cat_menu = ctk.CTkOptionMenu(
             modal,
-            values=["Bitcoin / Kripto Seed", "Özel Anahtar (Private Key)", "Kullanıcı Parolası", "Gizli Not"],
+            values=[get_text("cat_seed"), get_text("cat_privkey"), get_text("cat_pass"), get_text("cat_note")],
             height=36
         )
         cat_menu.pack(pady=6, padx=25, fill="x")
@@ -839,13 +870,13 @@ class AegisVaultApp(ctk.CTk):
         secret_text = ctk.CTkTextbox(modal, height=90, font=ctk.CTkFont(family="Consolas", size=13))
         secret_text.pack(pady=4, padx=25, fill="x")
 
-        ent_lbl = ctk.CTkLabel(modal, text="Entropi: 0 bit", font=ctk.CTkFont(size=11), text_color="#94a3b8")
+        ent_lbl = ctk.CTkLabel(modal, text="Entropy: 0 bits", font=ctk.CTkFont(size=11), text_color="#94a3b8")
         ent_lbl.pack(anchor="w", padx=25)
 
         def update_entropy_display(event=None):
             val = secret_text.get("1.0", "end").strip()
             res = crypto_utils.calculate_password_entropy(val)
-            ent_lbl.configure(text=f"Entropi: {res['entropy']} bit - {res['label']}", text_color=res["color"])
+            ent_lbl.configure(text=f"Entropy: {res['entropy']} bits - {res['label']}", text_color=res["color"])
 
         secret_text.bind("<KeyRelease>", update_entropy_display)
 
@@ -896,7 +927,7 @@ class AegisVaultApp(ctk.CTk):
         save_btn.pack(pady=(12, 18), padx=25, fill="x")
 
     # =========================================================================
-    # 4. MODÜL: PORTFÖY (BLOCKCHAIN.INFO DOĞRULAMALI)
+    # 4. PORTFOLIO VIEW (BLOCKCHAIN.INFO VERIFIED)
     # =========================================================================
     def _render_portfolio_view(self, parent):
         parent.grid_rowconfigure(2, weight=1)
@@ -946,7 +977,7 @@ class AegisVaultApp(ctk.CTk):
         ref_btn.pack(side="right")
 
         if not portfolio_items:
-            ctk.CTkLabel(addr_scroll, text="Henüz eklenmiş adres yok.", font=ctk.CTkFont(size=13), text_color="#64748b").pack(pady=40)
+            ctk.CTkLabel(addr_scroll, text=get_text("portfolio_empty"), font=ctk.CTkFont(size=13), text_color="#64748b").pack(pady=40)
         else:
             for item in portfolio_items:
                 self._create_address_card(addr_scroll, item)
@@ -993,19 +1024,19 @@ class AegisVaultApp(ctk.CTk):
         lbl = ctk.CTkLabel(modal, text=get_text("btn_add_address"), font=ctk.CTkFont(size=16, weight="bold"), text_color="#38bdf8")
         lbl.pack(pady=(16, 8))
 
-        label_in = ctk.CTkEntry(modal, placeholder_text="Cüzdan Etiketi (Örn: Ledger Nano BTC)", height=36)
+        label_in = ctk.CTkEntry(modal, placeholder_text=get_text("portfolio_lbl_ph"), height=36)
         label_in.pack(pady=5, padx=25, fill="x")
 
         coin_menu = ctk.CTkOptionMenu(modal, values=["BTC", "ETH", "SOL"], height=36)
         coin_menu.pack(pady=5, padx=25, fill="x")
 
-        addr_in = ctk.CTkEntry(modal, placeholder_text="Genel Adres (Public Address - bc1q... / 0x...)", height=36)
+        addr_in = ctk.CTkEntry(modal, placeholder_text=get_text("portfolio_addr_ph"), height=36)
         addr_in.pack(pady=5, padx=25, fill="x")
 
         val_status_lbl = ctk.CTkLabel(modal, text="", font=ctk.CTkFont(size=11), text_color="#94a3b8")
         val_status_lbl.pack(padx=25, anchor="w")
 
-        amount_in = ctk.CTkEntry(modal, placeholder_text="Miktar (Manuel veya Canlı Çek)", height=36)
+        amount_in = ctk.CTkEntry(modal, placeholder_text=get_text("portfolio_amt_ph"), height=36)
         amount_in.pack(pady=5, padx=25, fill="x")
 
         def check_and_fetch_live():
@@ -1021,11 +1052,11 @@ class AegisVaultApp(ctk.CTk):
                 live_btc = crypto_portfolio.fetch_live_btc_balance(a)
                 amount_in.delete(0, "end")
                 amount_in.insert(0, str(live_btc))
-                messagebox.showinfo("Blockchain.info", f"Blockchain düğümünden canlı bakiye çekildi: {live_btc} BTC")
+                messagebox.showinfo("Blockchain.info", f"Live on-chain balance fetched: {live_btc} BTC")
 
         fetch_btn = ctk.CTkButton(
             modal,
-            text="📡 Adresi Doğrula ve Canlı Bakiyeyi Blokzincirden Çek",
+            text=get_text("portfolio_btn_fetch"),
             fg_color="#1e293b",
             hover_color="#334155",
             text_color="#38bdf8",
@@ -1040,7 +1071,7 @@ class AegisVaultApp(ctk.CTk):
             a = addr_in.get().strip()
             is_valid, msg = crypto_portfolio.validate_crypto_address(c, a)
             if not is_valid:
-                messagebox.showerror("Error", f"Geçersiz adres: {msg}")
+                messagebox.showerror("Error", f"Invalid address: {msg}")
                 return
             try:
                 amt = float(amount_in.get().strip())
@@ -1051,7 +1082,7 @@ class AegisVaultApp(ctk.CTk):
             modal.destroy()
             self.render_active_tab()
 
-        save_btn = ctk.CTkButton(modal, text="KAYDET", fg_color="#0284c7", height=40, command=save)
+        save_btn = ctk.CTkButton(modal, text=get_text("btn_save"), fg_color="#0284c7", height=40, command=save)
         save_btn.pack(pady=12, padx=25, fill="x")
 
     def _delete_portfolio_item(self, item_id: str):
@@ -1060,7 +1091,6 @@ class AegisVaultApp(ctk.CTk):
 
     def _refresh_portfolio_and_balances(self):
         self.live_prices = crypto_portfolio.fetch_live_prices()
-        # Kayıtlı BTC adreslerinin bakiyelerini de güncelle
         for item in self.vault_data.get("portfolio", []):
             if item.get("coin") == "BTC":
                 live_b = crypto_portfolio.fetch_live_btc_balance(item.get("address", ""))
@@ -1068,12 +1098,132 @@ class AegisVaultApp(ctk.CTk):
                     item["amount"] = live_b
         vault_storage.save_vault(self.effective_password or self.master_password, self.vault_data, is_decoy=self.is_decoy)
         self.render_active_tab()
-        messagebox.showinfo("Updated", "Fiyatlar ve BTC bakiyeleri başarıyla güncellendi!")
+        messagebox.showinfo("Updated", get_text("portfolio_refreshed_alert"))
 
     # =========================================================================
-    # 5. MODÜL: CANLI P2P ŞİFRELİ SOHBET AĞI (CANLI SOKET)
+    # 5. PERSISTENT LIVE P2P ENCRYPTED CHAT (SURVIVES TAB SWITCHES)
     # =========================================================================
+    def _on_p2p_msg_received(self, sender: str, text: str, ts: str, is_mine: bool):
+        """Global callback when a message arrives via MQTT relay."""
+        record = {
+            "sender": sender,
+            "text": text,
+            "ts": ts,
+            "is_mine": is_mine,
+            "time_recv": time.time(),
+            "burn": text.startswith("[BURNT-30]:"),
+            "file": text.startswith("[FILE-DROP]:")
+        }
+        self.p2p_message_history.append(record)
+
+        # If chat tab is active and visible, render bubble immediately
+        if self.current_tab == "p2p_chat" and hasattr(self, "p2p_messages_box") and self.p2p_messages_box.winfo_exists():
+            self.after(0, lambda r=record: self._render_single_p2p_bubble(r))
+
+    def _on_p2p_status_update(self, text: str):
+        """Global callback when P2P connection status updates."""
+        self.p2p_status_text = text
+        if self.current_tab == "p2p_chat" and hasattr(self, "p2p_status_lbl") and self.p2p_status_lbl.winfo_exists():
+            self.after(0, lambda: self.p2p_status_lbl.configure(text=text))
+
+    def _render_single_p2p_bubble(self, record: dict):
+        """Renders an individual chat bubble into the active messages box."""
+        if not hasattr(self, "p2p_messages_box") or not self.p2p_messages_box.winfo_exists():
+            return
+
+        sender = record["sender"]
+        text = record["text"]
+        ts = record["ts"]
+        is_mine = record["is_mine"]
+        time_recv = record.get("time_recv", time.time())
+        is_burn = record.get("burn", False)
+        is_file = record.get("file", False)
+
+        # Handle file drop packet
+        if is_file:
+            try:
+                f_json = json.loads(text[len("[FILE-DROP]:"):].strip())
+                fname = f_json.get("filename", "file.bin")
+                fsize = f_json.get("size", 0)
+                b64_content = f_json.get("data", "")
+            except Exception:
+                fname = "file.bin"
+                fsize = 0
+                b64_content = ""
+
+            bubble = ctk.CTkFrame(
+                self.p2p_messages_box,
+                fg_color="#064e3b" if is_mine else "#14532d",
+                border_width=1,
+                border_color="#22c55e",
+                corner_radius=8
+            )
+            bubble.pack(fill="x", pady=4, padx=8)
+
+            hdr = get_text("chat_file_tx_hdr", ts=ts) if is_mine else get_text("chat_file_rx_hdr", sender=sender, ts=ts)
+            ctk.CTkLabel(bubble, text=hdr, font=ctk.CTkFont(size=10, weight="bold"), text_color="#86efac").pack(anchor="w", padx=10, pady=(4, 0))
+            badge_txt = get_text("chat_file_badge", fname=fname, size=fsize)
+            ctk.CTkLabel(bubble, text=badge_txt, font=ctk.CTkFont(size=13, weight="bold"), text_color="#ffffff").pack(anchor="w", padx=10, pady=(2, 4))
+
+            def save_dropped_file():
+                dest = filedialog.asksaveasfilename(initialfile=fname, title=get_text("vault_file_export_title"))
+                if not dest:
+                    return
+                try:
+                    with open(dest, "wb") as f:
+                        f.write(base64.b64decode(b64_content))
+                    messagebox.showinfo("Success", get_text("chat_file_saved_msg", dest=dest))
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save file: {e}")
+
+            dl_btn = ctk.CTkButton(
+                bubble,
+                text=get_text("chat_file_dl_btn", fname=fname),
+                font=ctk.CTkFont(size=11, weight="bold"),
+                fg_color="#16a34a",
+                hover_color="#15803d",
+                height=28,
+                command=save_dropped_file
+            )
+            dl_btn.pack(anchor="w", padx=10, pady=(2, 8))
+            return
+
+        # Handle text or 30-second self-destruct message
+        display_text = text[len("[BURNT-30]:"):].strip() if is_burn else text
+
+        bubble = ctk.CTkFrame(
+            self.p2p_messages_box,
+            fg_color="#0284c7" if is_mine else "#1e293b",
+            border_width=1 if is_burn else 0,
+            border_color="#ef4444" if is_burn else "#334155",
+            corner_radius=8
+        )
+        bubble.pack(fill="x", pady=4, padx=8)
+
+        hdr = f"{get_text('chat_you')} ({ts})" if is_mine else f"{sender} ({ts})"
+        if is_burn:
+            hdr += get_text("chat_burn_badge")
+
+        ctk.CTkLabel(bubble, text=hdr, font=ctk.CTkFont(size=10, weight="bold"), text_color="#fca5a5" if is_burn else "#cbd5e1").pack(anchor="w", padx=10, pady=(4, 0))
+        ctk.CTkLabel(bubble, text=display_text, font=ctk.CTkFont(size=13), text_color="#ffffff", justify="left").pack(anchor="w", padx=10, pady=(2, 6))
+
+        if is_burn:
+            elapsed = time.time() - time_recv
+            remaining_ms = max(100, int((30 - elapsed) * 1000))
+            self.after(remaining_ms, lambda b=bubble, r=record: self._expire_burnt_msg(b, r))
+
+    def _expire_burnt_msg(self, bubble, record):
+        """Destroys an expired self-destruct message bubble and removes it from history."""
+        try:
+            if bubble and bubble.winfo_exists():
+                bubble.destroy()
+        except Exception:
+            pass
+        if record in self.p2p_message_history:
+            self.p2p_message_history.remove(record)
+
     def _render_p2p_chat_view(self, parent):
+        """Constructs live P2P chat interface while maintaining persistent connection and history."""
         parent.grid_rowconfigure(1, weight=1)
 
         info_card = ctk.CTkFrame(parent, fg_color="#1e1b4b", border_width=1, border_color="#3730a3", corner_radius=10)
@@ -1086,123 +1236,87 @@ class AegisVaultApp(ctk.CTk):
         chat_layout.grid_rowconfigure(1, weight=1)
         chat_layout.grid_columnconfigure(0, weight=1)
 
-        # Üst Bağlantı Kontrolleri
+        # Connection Controls
         top_conn = ctk.CTkFrame(chat_layout, fg_color="#0f172a", corner_radius=10)
         top_conn.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
-        self.p2p_status_lbl = ctk.CTkLabel(top_conn, text="⚪ Durum: Bağlantı yok. Bir oda adı ve şifresi girip bağlanın.", font=ctk.CTkFont(size=12, weight="bold"), text_color="#94a3b8")
+        # Status Label
+        is_conn = (self.p2p_session is not None and self.p2p_session.is_connected)
+        default_status = get_text("chat_status_connected", room=self.p2p_saved_room) if is_conn else get_text("chat_status_disconnected")
+        self.p2p_status_lbl = ctk.CTkLabel(
+            top_conn,
+            text=self.p2p_status_text or default_status,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#4ade80" if is_conn else "#94a3b8"
+        )
         self.p2p_status_lbl.pack(padx=15, pady=(10, 4), anchor="w")
 
         ctrl_row1 = ctk.CTkFrame(top_conn, fg_color="transparent")
         ctrl_row1.pack(fill="x", padx=15, pady=(2, 4))
 
         nick_in = ctk.CTkEntry(ctrl_row1, placeholder_text=get_text("chat_nick"), width=120, height=32)
-        nick_in.insert(0, self.selected_profile)
+        nick_in.insert(0, self.p2p_saved_nick or self.selected_profile)
         nick_in.pack(side="left", padx=3)
 
         room_in = ctk.CTkEntry(ctrl_row1, placeholder_text=get_text("chat_room_name"), width=160, height=32)
-        room_in.insert(0, "som-tim-01")
+        room_in.insert(0, self.p2p_saved_room)
         room_in.pack(side="left", padx=3)
 
         room_key_in = ctk.CTkEntry(ctrl_row1, placeholder_text=get_text("chat_room_key"), show="*", width=160, height=32)
-        room_key_in.insert(0, "AegisRoom2026!")
+        room_key_in.insert(0, self.p2p_saved_key)
         room_key_in.pack(side="left", padx=3)
 
-        def update_status(text):
-            self.after(0, lambda: self.p2p_status_lbl.configure(text=text))
+        def sync_inputs(e=None):
+            self.p2p_saved_nick = nick_in.get().strip()
+            self.p2p_saved_room = room_in.get().strip()
+            self.p2p_saved_key = room_key_in.get().strip()
 
-        def on_msg_received(sender, text, ts, is_mine):
-            def add_bubble():
-                if text.startswith("[FILE-DROP]:"):
-                    try:
-                        f_json = json.loads(text[len("[FILE-DROP]:"):].strip())
-                        fname = f_json.get("filename", "belge.bin")
-                        fsize = f_json.get("size", 0)
-                        b64_content = f_json.get("data", "")
-                    except Exception:
-                        fname = "belge.bin"
-                        fsize = 0
-                        b64_content = ""
+        nick_in.bind("<KeyRelease>", sync_inputs)
+        room_in.bind("<KeyRelease>", sync_inputs)
+        room_key_in.bind("<KeyRelease>", sync_inputs)
 
-                    bubble = ctk.CTkFrame(
-                        self.p2p_messages_box,
-                        fg_color="#064e3b" if is_mine else "#14532d",
-                        border_width=1,
-                        border_color="#22c55e",
-                        corner_radius=8
-                    )
-                    bubble.pack(fill="x", pady=4, padx=8)
-
-                    hdr = f"{sender} ({ts}) 📎 [ŞİFRELİ DOSYA TRANSFERİ]" if not is_mine else f"Siz ({ts}) 📎 [ŞİFRELİ DOSYA GÖNDERİLDİ]"
-                    ctk.CTkLabel(bubble, text=hdr, font=ctk.CTkFont(size=10, weight="bold"), text_color="#86efac").pack(anchor="w", padx=10, pady=(4, 0))
-                    ctk.CTkLabel(bubble, text=f"📄 {fname}  ({fsize:,} Bayt - AES-256-GCM Zırhlı)", font=ctk.CTkFont(size=13, weight="bold"), text_color="#ffffff").pack(anchor="w", padx=10, pady=(2, 4))
-
-                    def save_dropped_file():
-                        dest = filedialog.asksaveasfilename(initialfile=fname, title="Şifreli Dosyayı Kaydet")
-                        if not dest:
-                            return
-                        try:
-                            with open(dest, "wb") as f:
-                                f.write(base64.b64decode(b64_content))
-                            messagebox.showinfo("Başarılı", f"Dosya başarıyla çözüldü ve kaydedildi:\n{dest}")
-                        except Exception as e:
-                            messagebox.showerror("Hata", f"Dosya kaydedilemedi: {e}")
-
-                    dl_btn = ctk.CTkButton(bubble, text=f"💾 '{fname}' İndir & Çöz", font=ctk.CTkFont(size=11, weight="bold"), fg_color="#16a34a", hover_color="#15803d", height=28, command=save_dropped_file)
-                    dl_btn.pack(anchor="w", padx=10, pady=(2, 8))
-                    return
-
-                is_burn = text.startswith("[BURNT-30]:")
-                display_text = text[len("[BURNT-30]:"):].strip() if is_burn else text
-
-                bubble = ctk.CTkFrame(
-                    self.p2p_messages_box,
-                    fg_color="#0284c7" if is_mine else "#1e293b",
-                    border_width=1 if is_burn else 0,
-                    border_color="#ef4444" if is_burn else "#334155",
-                    corner_radius=8
-                )
-                bubble.pack(fill="x", pady=4, padx=8)
-
-                hdr = f"{sender} ({ts})" if not is_mine else f"Siz ({ts})"
-                if is_burn:
-                    hdr += " ⏱️ [KENDİ KENDİNİ İMHA EDİYOR - 30 SN]"
-                ctk.CTkLabel(bubble, text=hdr, font=ctk.CTkFont(size=10, weight="bold"), text_color="#fca5a5" if is_burn else "#cbd5e1").pack(anchor="w", padx=10, pady=(4, 0))
-                ctk.CTkLabel(bubble, text=display_text, font=ctk.CTkFont(size=13), text_color="#ffffff", justify="left").pack(anchor="w", padx=10, pady=(2, 6))
-
-                if is_burn:
-                    self.after(30000, lambda: bubble.destroy() if bubble.winfo_exists() else None)
-
-            self.after(0, add_bubble)
-
+        # Connection Toggle Handler
         def toggle_connect():
             if self.p2p_session and self.p2p_session.is_connected:
                 self.p2p_session.close()
                 self.p2p_session = None
+                self.p2p_status_text = get_text("chat_status_left")
                 conn_btn.configure(text=get_text("btn_chat_connect"), fg_color="#059669", hover_color="#047857")
-                self.p2p_status_lbl.configure(text="⚪ Durum: Bağlantı kesildi.", text_color="#94a3b8")
+                self.p2p_status_lbl.configure(text=self.p2p_status_text, text_color="#94a3b8")
             else:
-                nick = nick_in.get().strip() or "Anonim"
-                room = room_in.get().strip() or "genel-oda"
-                key = room_key_in.get().strip()
+                sync_inputs()
+                nick = self.p2p_saved_nick or "Anonymous"
+                room = self.p2p_saved_room or "general-room"
+                key = self.p2p_saved_key
                 if not key:
-                    messagebox.showerror("Error", "Lütfen bir oda şifresi girin!")
+                    messagebox.showerror("Error", "Please enter a room key!")
                     return
                 if self.p2p_session:
                     self.p2p_session.close()
-                self.p2p_session = live_p2p_chat.GlobalEncryptedChatSession(nick, room, key, on_msg_received, update_status)
+
+                self.p2p_session = live_p2p_chat.GlobalEncryptedChatSession(
+                    nick, room, key, self._on_p2p_msg_received, self._on_p2p_status_update
+                )
                 self.p2p_session.connect()
                 conn_btn.configure(text=get_text("btn_chat_disconnect"), fg_color="#dc2626", hover_color="#b91c1c")
 
-        conn_btn = ctk.CTkButton(ctrl_row1, text=get_text("btn_chat_connect"), fg_color="#059669", hover_color="#047857", width=180, height=32, command=toggle_connect)
+        btn_txt = get_text("btn_chat_disconnect") if is_conn else get_text("btn_chat_connect")
+        btn_fg = "#dc2626" if is_conn else "#059669"
+        btn_hov = "#b91c1c" if is_conn else "#047857"
+        conn_btn = ctk.CTkButton(ctrl_row1, text=btn_txt, fg_color=btn_fg, hover_color=btn_hov, width=180, height=32, command=toggle_connect)
         conn_btn.pack(side="left", padx=6)
 
-        # İkinci Kontrol Satırı: Oda Üretici, Davet Kopyalama ve Temizleme
+        # Re-attach live session callbacks to current window
+        if self.p2p_session:
+            self.p2p_session.on_message = self._on_p2p_msg_received
+            self.p2p_session.on_status = self._on_p2p_status_update
+
+        # Row 2: Random Tactical Room Generator, Copy Invite, and Zeroize
         ctrl_row2 = ctk.CTkFrame(top_conn, fg_color="transparent")
         ctrl_row2.pack(fill="x", padx=15, pady=(2, 10))
 
         def gen_random_room():
-            prefix = secrets.choice(["harekat", "taktik-hat", "som-tim", "aegis-oda", "delta-tim", "anka-hat"])
+            prefix = secrets.choice(["tactical-line", "som-unit", "aegis-room", "delta-team", "phoenix-link"])
             num = secrets.randbelow(9000) + 1000
             rand_room = f"{prefix}-{num}"
             rand_key = secrets.token_urlsafe(12)
@@ -1211,63 +1325,85 @@ class AegisVaultApp(ctk.CTk):
             room_in.insert(0, rand_room)
             room_key_in.delete(0, "end")
             room_key_in.insert(0, rand_key)
-            messagebox.showinfo("Oda Hazır", f"🎲 Yeni Güvenli Oda ve Askeri Parola Üretildi!\n\nOda Adı: {rand_room}\nOda Şifresi: {rand_key}\n\nŞimdi '📋 Daveti Kopyala' butonuna basarak arkadaşınıza gönderebilirsiniz.")
+            sync_inputs()
+            messagebox.showinfo(
+                get_text("chat_alert_room_ready_title"),
+                get_text("chat_alert_room_ready_msg", room=rand_room, key=rand_key)
+            )
 
         def copy_room_invite():
-            r = room_in.get().strip()
-            k = room_key_in.get().strip()
+            sync_inputs()
+            r = self.p2p_saved_room
+            k = self.p2p_saved_key
             if not r or not k:
-                messagebox.showwarning("Eksik", "Lütfen önce oda adı ve şifresi belirleyin!")
+                messagebox.showwarning("Warning", "Please specify room name and room key first!")
                 return
-            invite = f"🛡️ AegisVault Askeri Güvenli Sohbet Daveti\n━━━━━━━━━━━━━━━━━━━━━\n📡 Oda Adı: {r}\n🔑 Oda Şifresi: {k}\n━━━━━━━━━━━━━━━━━━━━━\n(AegisVault uygulamasında bu bilgileri girip 'Odaya Bağlan' butonuna basın)."
+            invite = get_text("chat_invite_template", room=r, key=k)
             self.clipboard_clear()
             self.clipboard_append(invite)
-            messagebox.showinfo("Kopyalandı", "Oda davet bilgileri panoya kopyalandı!\nArkadaşınıza gönderip aynı bilgilerle odaya bağlanmasını sağlayabilirsiniz.")
+            messagebox.showinfo(
+                get_text("chat_alert_invite_copied_title"),
+                get_text("chat_alert_invite_copied_msg")
+            )
 
         def clear_chat():
+            self.p2p_message_history.clear()
             for w in self.p2p_messages_box.winfo_children():
                 w.destroy()
 
-        gen_btn = ctk.CTkButton(ctrl_row2, text="🎲 Rastgele Oda Üret", font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", width=160, height=28, command=gen_random_room)
+        gen_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_rand_room"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", width=160, height=28, command=gen_random_room)
         gen_btn.pack(side="left", padx=3)
 
-        copy_btn = ctk.CTkButton(ctrl_row2, text="📋 Daveti Kopyala", font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#4ade80", width=150, height=28, command=copy_room_invite)
+        copy_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_copy_invite"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#4ade80", width=150, height=28, command=copy_room_invite)
         copy_btn.pack(side="left", padx=3)
 
-        clr_btn = ctk.CTkButton(ctrl_row2, text="🧹 Sohbeti Sıfırla (Zeroize)", font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#f87171", width=170, height=28, command=clear_chat)
+        clr_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_zeroize"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#f87171", width=170, height=28, command=clear_chat)
         clr_btn.pack(side="left", padx=3)
 
-        # Mesaj Akışı Kutusu
+        # Message Stream Box
         self.p2p_messages_box = ctk.CTkScrollableFrame(chat_layout, fg_color="#0b1120", corner_radius=10)
         self.p2p_messages_box.grid(row=1, column=0, sticky="nsew", pady=(0, 8))
 
-        # Alt Mesaj Gönderim Alanı
+        # Replay unexpired message history
+        now = time.time()
+        self.p2p_message_history = [
+            m for m in self.p2p_message_history
+            if not (m.get("burn") and (now - m.get("time_recv", 0) >= 30))
+        ]
+        for msg_record in self.p2p_message_history:
+            self._render_single_p2p_bubble(msg_record)
+
+        # Bottom Input Area
         bot_send = ctk.CTkFrame(chat_layout, fg_color="transparent")
         bot_send.grid(row=2, column=0, sticky="ew")
         bot_send.grid_columnconfigure(1, weight=1)
 
-        burn_var = ctk.BooleanVar(value=False)
-        burn_chk = ctk.CTkCheckBox(bot_send, text="⏱️ 30s İmha", variable=burn_var, font=ctk.CTkFont(size=11), text_color="#f87171", width=95)
+        burn_var = ctk.BooleanVar(value=self.p2p_burn_enabled)
+
+        def on_burn_toggle():
+            self.p2p_burn_enabled = burn_var.get()
+
+        burn_chk = ctk.CTkCheckBox(bot_send, text=get_text("chat_burn_label"), variable=burn_var, command=on_burn_toggle, font=ctk.CTkFont(size=11), text_color="#f87171", width=105)
         burn_chk.grid(row=0, column=0, padx=(0, 8))
 
-        msg_input = ctk.CTkEntry(bot_send, placeholder_text="Uçtan uca AES-256-GCM şifreli mesajınızı yazın...", height=40)
+        msg_input = ctk.CTkEntry(bot_send, placeholder_text=get_text("chat_input_ph"), height=40)
         msg_input.grid(row=0, column=1, sticky="ew", padx=(0, 8))
 
         def send_file_p2p():
             if not self.p2p_session or not self.p2p_session.is_connected:
-                messagebox.showwarning("Not Connected", "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.")
+                messagebox.showwarning("Not Connected", get_text("chat_alert_not_connected"))
                 return
 
             fpath = filedialog.askopenfilename(
-                title="Şifrelenip Gönderilecek Dosyayı Seçin (Maks. 250 KB)",
-                filetypes=[("Tüm Dosyalar", "*.*")]
+                title=get_text("chat_file_dialog_title"),
+                filetypes=[("All Files", "*.*")]
             )
             if not fpath:
                 return
 
             fsize = os.path.getsize(fpath)
             if fsize > 260 * 1024:
-                messagebox.showerror("Boyut Aşımı", f"Taktik anlık transfer için dosya boyutu maksimum 250 KB olmalıdır!\nSeçilen dosya: {fsize // 1024} KB.\n(Daha büyük dosyalar için lütfen 'Şifreli Dosya Kasası'nı kullanın).")
+                messagebox.showerror("Error", get_text("chat_file_limit_err", size=fsize // 1024))
                 return
 
             fname = os.path.basename(fpath)
@@ -1284,14 +1420,14 @@ class AegisVaultApp(ctk.CTk):
 
             packet = f"[FILE-DROP]: {file_payload}"
             if self.p2p_session.send_message(packet):
-                messagebox.showinfo("Gönderildi", f"'{fname}' dosyası AES-256-GCM ile zırhlanarak karşı tarafa başarıyla iletildi!")
+                messagebox.showinfo("Sent", get_text("chat_file_sent", fname=fname))
 
         def send_p2p(event=None):
             txt = msg_input.get().strip()
             if not txt:
                 return
             if not self.p2p_session or not self.p2p_session.is_connected:
-                messagebox.showwarning("Not Connected", "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.")
+                messagebox.showwarning("Not Connected", get_text("chat_alert_not_connected"))
                 return
             payload_txt = f"[BURNT-30]: {txt}" if burn_var.get() else txt
             if self.p2p_session.send_message(payload_txt):
@@ -1299,14 +1435,14 @@ class AegisVaultApp(ctk.CTk):
 
         msg_input.bind("<Return>", send_p2p)
 
-        file_btn = ctk.CTkButton(bot_send, text="📎 Dosya", font=ctk.CTkFont(size=12, weight="bold"), fg_color="#10b981", hover_color="#059669", width=85, height=40, command=send_file_p2p)
+        file_btn = ctk.CTkButton(bot_send, text=get_text("chat_btn_file"), font=ctk.CTkFont(size=12, weight="bold"), fg_color="#10b981", hover_color="#059669", width=85, height=40, command=send_file_p2p)
         file_btn.grid(row=0, column=2, padx=(0, 6))
 
         send_btn = ctk.CTkButton(bot_send, text=get_text("btn_send"), fg_color="#0284c7", width=100, height=40, command=send_p2p)
         send_btn.grid(row=0, column=3)
 
     # =========================================================================
-    # HAVA BOŞLUKLU (AIR-GAPPED) ASKERİ OPTİK QR İLETİŞİMİ
+    # 6. AIR-GAPPED MILITARY OPTICAL QR CRYPTOGRAPHY
     # =========================================================================
     def _render_airgap_view(self, parent):
         parent.grid_rowconfigure(1, weight=1)
@@ -1321,25 +1457,25 @@ class AegisVaultApp(ctk.CTk):
         tab_tx = tabview.add(get_text("tab_airgap_tx"))
         tab_rx = tabview.add(get_text("tab_airgap_rx"))
 
-        # --- TAB 1: VERİCİ (TRANSMIT) ---
+        # --- TAB 1: TRANSMITTER (TX) ---
         tab_tx.grid_columnconfigure(0, weight=1)
         tab_tx.grid_columnconfigure(1, weight=1)
 
         tx_left = ctk.CTkFrame(tab_tx, fg_color="transparent")
         tx_left.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
 
-        ctk.CTkLabel(tx_left, text="Aktarılacak Gizli Metin / Seed / Koordinat:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(0, 4))
+        ctk.CTkLabel(tx_left, text=get_text("airgap_tx_secret_label"), font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(0, 4))
         tx_input = ctk.CTkTextbox(tx_left, height=130, font=ctk.CTkFont(family="Consolas", size=12))
         tx_input.pack(fill="x", pady=(0, 10))
 
-        ctk.CTkLabel(tx_left, text="AES-256-GCM Şifreleme Parolası (İsteğe Bağlı):", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(0, 4))
-        tx_key = ctk.CTkEntry(tx_left, placeholder_text="Boş bırakılırsa düz metin QR üretilir...", show="*", height=36)
+        ctk.CTkLabel(tx_left, text=get_text("airgap_tx_pass_label"), font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(0, 4))
+        tx_key = ctk.CTkEntry(tx_left, placeholder_text=get_text("airgap_tx_pass_ph"), show="*", height=36)
         tx_key.pack(fill="x", pady=(0, 15))
 
         tx_right = ctk.CTkFrame(tab_tx, fg_color="#0b1120", corner_radius=12)
         tx_right.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
-        qr_display_lbl = ctk.CTkLabel(tx_right, text="QR Kod Burada Görünecek", text_color="#64748b")
+        qr_display_lbl = ctk.CTkLabel(tx_right, text=get_text("airgap_qr_placeholder"), text_color="#64748b")
         qr_display_lbl.pack(expand=True, pady=10)
 
         tx_current_img = {"pil": None}
@@ -1347,7 +1483,7 @@ class AegisVaultApp(ctk.CTk):
         def do_generate_qr():
             txt = tx_input.get("1.0", "end").strip()
             if not txt:
-                messagebox.showerror("Hata", "Lütfen aktarılacak metni girin!")
+                messagebox.showerror("Error", "Please enter payload to transmit!")
                 return
             key = tx_key.get().strip() or None
             try:
@@ -1357,27 +1493,27 @@ class AegisVaultApp(ctk.CTk):
                 qr_display_lbl.configure(image=ctk_img, text="")
                 save_qr_btn.configure(state="normal")
             except Exception as e:
-                messagebox.showerror("Hata", f"QR Kod üretilemedi: {e}")
+                messagebox.showerror("Error", f"Failed to generate QR: {e}")
 
         def do_save_qr():
             if not tx_current_img["pil"]:
                 return
             dest = filedialog.asksaveasfilename(
                 defaultextension=".png",
-                filetypes=[("PNG Görseli", "*.png")],
-                title="QR Kod Görselini Kaydet"
+                filetypes=[("PNG Image", "*.png")],
+                title=get_text("airgap_btn_save_qr")
             )
             if dest:
                 tx_current_img["pil"].save(dest)
-                messagebox.showinfo("Kaydedildi", f"QR Kod başarıyla kaydedildi:\n{dest}")
+                messagebox.showinfo("Saved", get_text("airgap_qr_saved", dest=dest))
 
-        gen_qr_btn = ctk.CTkButton(tx_left, text="⚡ Şifrele & Optik QR Üret", font=ctk.CTkFont(size=13, weight="bold"), fg_color="#059669", hover_color="#047857", height=40, command=do_generate_qr)
+        gen_qr_btn = ctk.CTkButton(tx_left, text=get_text("airgap_btn_gen_qr"), font=ctk.CTkFont(size=13, weight="bold"), fg_color="#059669", hover_color="#047857", height=40, command=do_generate_qr)
         gen_qr_btn.pack(fill="x", pady=(0, 8))
 
-        save_qr_btn = ctk.CTkButton(tx_left, text="💾 QR Kodunu Resim Olarak Kaydet (PNG)", fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", height=34, state="disabled", command=do_save_qr)
+        save_qr_btn = ctk.CTkButton(tx_left, text=get_text("airgap_btn_save_qr"), fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", height=34, state="disabled", command=do_save_qr)
         save_qr_btn.pack(fill="x")
 
-        # --- TAB 2: ALICI (RECEIVE) ---
+        # --- TAB 2: RECEIVER (RX) ---
         tab_rx.grid_columnconfigure(0, weight=1)
 
         rx_frame = ctk.CTkFrame(tab_rx, fg_color="transparent")
@@ -1388,8 +1524,8 @@ class AegisVaultApp(ctk.CTk):
 
         def load_qr_file():
             fpath = filedialog.askopenfilename(
-                title="QR Kodu İçeren Görseli Seçin",
-                filetypes=[("Resim Dosyaları", "*.png;*.jpg;*.jpeg;*.bmp")]
+                title="Select QR Image File",
+                filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp")]
             )
             if not fpath:
                 return
@@ -1397,44 +1533,44 @@ class AegisVaultApp(ctk.CTk):
                 decoded_str = airgap_crypto.decode_airgap_image(fpath)
                 rx_token_entry.delete("1.0", "end")
                 rx_token_entry.insert("1.0", decoded_str)
-                messagebox.showinfo("QR Tespit Edildi", f"Görselden {len(decoded_str)} karakterlik veri başarıyla okundu!")
+                messagebox.showinfo("Detected", get_text("airgap_qr_loaded", count=len(decoded_str)))
             except Exception as e:
-                messagebox.showerror("Okuma Hatası", str(e))
+                messagebox.showerror("Error", str(e))
 
-        load_img_btn = ctk.CTkButton(top_rx_btns, text="🖼️ QR Görsel Dosyası Yükle (OpenCV)", fg_color="#0284c7", hover_color="#0369a1", height=36, command=load_qr_file)
+        load_img_btn = ctk.CTkButton(top_rx_btns, text=get_text("airgap_btn_load_img"), fg_color="#0284c7", hover_color="#0369a1", height=36, command=load_qr_file)
         load_img_btn.pack(side="left", padx=(0, 10))
 
-        ctk.CTkLabel(rx_frame, text="QR Koddan Okunan / Yapıştırılan Token:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
+        ctk.CTkLabel(rx_frame, text=get_text("airgap_rx_token_label"), font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
         rx_token_entry = ctk.CTkTextbox(rx_frame, height=90, font=ctk.CTkFont(family="Consolas", size=11))
         rx_token_entry.pack(fill="x", pady=(0, 8))
 
-        ctk.CTkLabel(rx_frame, text="AES-256-GCM Çözme Parolası:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
-        rx_key_entry = ctk.CTkEntry(rx_frame, placeholder_text="Şifreli ise parolayı girin...", show="*", height=36)
+        ctk.CTkLabel(rx_frame, text=get_text("airgap_rx_pass_label"), font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
+        rx_key_entry = ctk.CTkEntry(rx_frame, placeholder_text=get_text("airgap_rx_pass_ph"), show="*", height=36)
         rx_key_entry.pack(fill="x", pady=(0, 10))
 
-        ctk.CTkLabel(rx_frame, text="Çözülen Orijinal Gizli Veri:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
+        ctk.CTkLabel(rx_frame, text=get_text("airgap_rx_result_label"), font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
         rx_result_box = ctk.CTkTextbox(rx_frame, height=100, font=ctk.CTkFont(family="Consolas", size=12))
         rx_result_box.pack(fill="x", pady=(0, 10))
 
         def do_decrypt_qr():
             raw_token = rx_token_entry.get("1.0", "end").strip()
             if not raw_token:
-                messagebox.showerror("Hata", "Lütfen bir QR token yükleyin veya yapıştırın!")
+                messagebox.showerror("Error", "Please load or paste a QR token!")
                 return
             key = rx_key_entry.get().strip() or None
             try:
                 plain = airgap_crypto.decrypt_airgap_token(raw_token, key)
                 rx_result_box.delete("1.0", "end")
                 rx_result_box.insert("1.0", plain)
-                messagebox.showinfo("Başarılı", "Hava boşluklu veri başarıyla çözüldü ve bütünlüğü doğrulandı!")
+                messagebox.showinfo("Success", get_text("airgap_decrypt_success"))
             except Exception as e:
-                messagebox.showerror("Çözme Hatası", str(e))
+                messagebox.showerror("Error", str(e))
 
-        decrypt_btn = ctk.CTkButton(rx_frame, text="🔓 Şifreli QR Verisini Çöz & Doğrula", font=ctk.CTkFont(size=13, weight="bold"), fg_color="#059669", hover_color="#047857", height=40, command=do_decrypt_qr)
+        decrypt_btn = ctk.CTkButton(rx_frame, text=get_text("airgap_btn_decrypt"), font=ctk.CTkFont(size=13, weight="bold"), fg_color="#059669", hover_color="#047857", height=40, command=do_decrypt_qr)
         decrypt_btn.pack(fill="x")
 
     # =========================================================================
-    # 6. SHAMIR'S SECRET SHARING (SSS)
+    # 7. SHAMIR'S SECRET SHARING (SSS)
     # =========================================================================
     def _render_shamir_view(self, parent):
         parent.grid_rowconfigure(1, weight=1)
@@ -1475,7 +1611,7 @@ class AegisVaultApp(ctk.CTk):
             n = int(n_menu.get())
             k = int(k_menu.get())
             if k > n:
-                messagebox.showerror("Error", "K cannot exceed N!")
+                messagebox.showerror("Error", "Threshold K cannot exceed total N!")
                 return
             shares = crypto_utils.shamir_split(text, k, n)
             out_text.delete("1.0", "end")
@@ -1484,7 +1620,7 @@ class AegisVaultApp(ctk.CTk):
         split_btn = ctk.CTkButton(tab_split, text=get_text("btn_do_split"), fg_color="#0284c7", command=do_split)
         split_btn.pack(pady=8, padx=15, fill="x")
 
-        # Birleştir
+        # Combine Tab
         comb_in = ctk.CTkTextbox(tab_combine, height=120, font=ctk.CTkFont(family="Consolas", size=11))
         comb_in.pack(fill="x", padx=15, pady=4)
 
@@ -1497,18 +1633,18 @@ class AegisVaultApp(ctk.CTk):
                 secret = crypto_utils.shamir_combine(raw)
                 comb_out.delete("1.0", "end")
                 comb_out.insert("1.0", secret)
-                messagebox.showinfo("Success", "Gizli veri Shamir parçalarından kurtarıldı!")
+                messagebox.showinfo("Success", get_text("shamir_success_msg"))
             except Exception as e:
-                messagebox.showerror("Error", f"Kurtarma hatası: {e}")
+                messagebox.showerror("Error", f"Recovery error: {e}")
 
         comb_btn = ctk.CTkButton(tab_combine, text=get_text("btn_do_combine"), fg_color="#059669", command=do_combine)
         comb_btn.pack(pady=8, padx=15, fill="x")
 
     # =========================================================================
-    # 7. BIP-39 VE REHBER
+    # 8. BIP-39 SEED ANALYZER & CRYPTO GUIDE
     # =========================================================================
     def _render_bip39_view(self, parent):
-        lbl_head = ctk.CTkLabel(parent, text="🔍 BIP-39 Tohum Analizi", font=ctk.CTkFont(size=18, weight="bold"), text_color="#38bdf8")
+        lbl_head = ctk.CTkLabel(parent, text=get_text("bip39_title"), font=ctk.CTkFont(size=18, weight="bold"), text_color="#38bdf8")
         lbl_head.pack(pady=(10, 6), anchor="w")
 
         seed_box = ctk.CTkTextbox(parent, height=90, font=ctk.CTkFont(family="Consolas", size=13))
@@ -1525,18 +1661,20 @@ class AegisVaultApp(ctk.CTk):
             text = seed_box.get("1.0", "end").strip()
             res = crypto_utils.validate_bip39_seed(text)
             color = "#4ade80" if res["is_valid_length"] and res["is_valid_format"] else "#ef4444"
+            len_str = get_text("bip39_valid_len") if res["is_valid_length"] else get_text("bip39_invalid_len")
+            fmt_str = get_text("bip39_valid_fmt") if res["is_valid_format"] else get_text("bip39_invalid_fmt")
             res_lbl.configure(
                 text=(
-                    f"● Kelime Sayısı: {res['word_count']}\n"
-                    f"● Standart Uyumu: {'Geçerli Uzunluk (12/15/18/21/24)' if res['is_valid_length'] else 'Hatalı Kelime Sayısı'}\n"
-                    f"● Karakter Seti: {'Doğru Format' if res['is_valid_format'] else 'Hatalı Karakterler'}\n"
-                    f"● Teorik Entropi: {res['entropy_bits']} bit\n"
-                    f"● Sonuç: {res['standard_status']}"
+                    f"{get_text('bip39_word_count', count=res['word_count'])}\n"
+                    f"{len_str}\n"
+                    f"{fmt_str}\n"
+                    f"{get_text('bip39_entropy', bits=res['entropy_bits'])}\n"
+                    f"{get_text('bip39_result', status=res['standard_status'])}"
                 ),
                 text_color=color
             )
 
-        btn = ctk.CTkButton(parent, text="TOHUMU ANALİZ ET", fg_color="#0284c7", command=analyze, height=36)
+        btn = ctk.CTkButton(parent, text=get_text("bip39_btn_analyze"), fg_color="#0284c7", command=analyze, height=36)
         btn.pack(fill="x", pady=6)
         analyze()
 
@@ -1544,42 +1682,64 @@ class AegisVaultApp(ctk.CTk):
         scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         scroll.pack(fill="both", expand=True)
 
-        guide_texts = [
-            ("🛡️ AES-256-GCM Neden Askeri Standarttır?", 
-             "AES-256, ABD Ulusal Güvenlik Ajansı (NSA) tarafından 'Top Secret' düzeyindeki devlet sırlarını korumak için onaylanan CNSA Suite standardıdır. 256-bit anahtar kombinasyonunu kırmak için evrendeki tüm atomların sayısından daha fazla hesaplama gücü gerekir.\nGCM (Galois/Counter Mode) modu ise şifreli metinle birlikte 128-bitlik bir doğrulama etiketi (Auth Tag) üretir. Dosyadaki tek bir harf veya bit değiştirilse dahi sistem bunu fark eder ve işlemi iptal eder."),
-            
-            ("🔒 scrypt ve GPU Brute-Force Direnci", 
-             "Standart SHA-256 veya MD5 algoritmaları bilgisayar belleği (RAM) kullanmaz. Bu yüzden bir saldırgan RTX 4090 gibi GPU çiftlikleriyle saniyede milyarlarca parola deneyebilir.\nAegisVault'ta kullanılan 'scrypt' algoritması her parola denemesinde ~32 MB RAM ayrılmasını zorunlu kılar. Bu bellek darboğazı sayesinde GPU'lar kilitlenir ve saniyede yalnızca birkaç yüz deneme yapabilir; kaba kuvvet saldırısı imkansız hale gelir."),
-             
-            ("🧩 Shamir's Secret Sharing (SSS) Nedir?", 
-             "Adını efsanevi kriptograf Adi Shamir'den alan bu sistem, bir sırrı N parçaya böler ve K tanesi olmadan çözülmesini imkansız kılar. 3-of-5 sisteminde oluşturulan 5 parçayı farklı şehirlerdeki banka kasalarına veya güvendiğiniz aile üyelerine dağıtabilirsiniz. Yangın veya hırsızlık durumunda 2 parça yok olsa bile paranızı kurtarabilirsiniz."),
-             
-            ("🎭 Tehdit Parolası (Duress Password / Plausible Deniability)", 
-             "Birisi fiziksel baskı altında kasanızı açmanızı isterse önceden belirlediğiniz sahte parolayı girebilirsiniz. Sistem gerçek verileriniz yerine sıradan önemsiz hesapların bulunduğu sahte bir kasa açar. Saldırgan gerçek kasanın varlığını matematiksel olarak kanıtlayamaz."),
+        guide_texts = {
+            "tr": [
+                ("🛡️ AES-256-GCM Neden Askeri Standarttır?", 
+                 "AES-256, ABD Ulusal Güvenlik Ajansı (NSA) tarafından 'Top Secret' düzeyindeki devlet sırlarını korumak için onaylanan CNSA Suite standardıdır. GCM (Galois/Counter Mode) modu ise şifreli metinle birlikte 128-bitlik bir doğrulama etiketi (Auth Tag) üretir. Dosyadaki tek bir harf veya bit değiştirilse dahi sistem bunu fark eder ve işlemi iptal eder."),
+                ("🔒 scrypt ve GPU Brute-Force Direnci", 
+                 "Standart SHA-256 veya MD5 algoritmaları bellek kullanmaz; bu yüzden GPU çiftlikleriyle saniyede milyarlarca parola denenebilir. AegisVault'ta kullanılan 'scrypt' algoritması her denemede ~32 MB RAM ayrılmasını zorunlu kılar; GPU'lar bellek darboğazına girer ve kaba kuvvet saldırısı imkansız hale gelir."),
+                ("🧩 Shamir's Secret Sharing (SSS) Nedir?", 
+                 "Bir sırrı N parçaya böler ve K tanesi bir araya gelmeden çözülmesini matematiksel olarak imkansız kılar. 3-of-5 sisteminde oluşturulan parçalar farklı yerlere dağıtılabilir; yangın veya hırsızlık durumunda 2 parça yok olsa bile paranız güvendedir."),
+                ("🎭 Tehdit Parolası (Duress Password / Plausible Deniability)", 
+                 "Fiziksel baskı altındayken girilebilecek sahte bir paroladır. Sistem gerçek veriler yerine sıradan önemsiz hesapların bulunduğu sahte bir kasa açar; saldırgan gerçek kasanın varlığını matematiksel olarak kanıtlayamaz."),
+                ("🔒 Cihaza Özel Donanım İmzası (Hardware Binding)",
+                 "Anahtar türetimi bilgisayarınızın anakart ve donanım kimliğiyle harmanlanır. Kasa dosyanız çalınıp başka bir bilgisayara götürülse bile doğru parola girilse dahi açılamaz.")
+            ],
+            "en": [
+                ("🛡️ Why is AES-256-GCM the Military Standard?",
+                 "AES-256 is certified by the NSA CNSA Suite for protecting Top Secret state secrets. The Galois/Counter Mode (GCM) computes a 128-bit authentication tag alongside the ciphertext. If even a single bit in the file is modified or tampered with, decryption instantly aborts with an integrity fault."),
+                ("🔒 scrypt & GPU Brute-Force Resistance",
+                 "Standard hashes like SHA-256 require no memory, allowing GPU clusters to attempt billions of passwords per second. AegisVault utilizes scrypt with memory-hard parameters (~32 MB RAM per attempt), paralyzing GPU/ASIC brute-force dictionary attacks."),
+                ("🧩 What is Shamir's Secret Sharing (SSS)?",
+                 "Invented by cryptographer Adi Shamir, SSS splits a cryptographic secret into N shares such that any K threshold must unite to reconstruct it. In a 3-of-5 setup, losing or leaking 2 shares compromises zero information."),
+                ("🎭 Duress Password & Plausible Deniability",
+                 "If compelled to open your vault under physical threat, entering the duress password decrypts an alternate decoy vault populated with innocuous data. An adversary cannot mathematically prove the existence of the real vault."),
+                ("🔒 Hardware Fingerprint Binding",
+                 "Ties cryptographic key derivation to your motherboard and machine architecture. Even if the encrypted .mvat file is exfiltrated, it cannot be decrypted on any other computer.")
+            ],
+            "ru": [
+                ("🛡️ Почему AES-256-GCM — военный стандарт?",
+                 "AES-256 сертифицирован АНБ США для защиты данных уровня 'Top Secret'. Режим GCM создает 128-битный аутентификационный тег. Изменение хотя бы одного бита приводит к немедленной блокировке расшифровки."),
+                ("🔒 scrypt и защита от GPU-атак",
+                 "Стандартные хеши не требуют памяти, что позволяет фермам GPU перебирать миллиарды паролей. scrypt в AegisVault требует ~32 МБ оперативной памяти на каждую попытку, парализуя перебор."),
+                ("🧩 Разделение секрета Шамира (SSS)",
+                 "Математически разделяет сид-фразу на N долей, требуя K долей для восстановления. При схеме 3 из 5 потеря или утечка 2 долей не раскрывает абсолютно ничего."),
+                ("🎭 Пароль под принуждением (Duress Mode)",
+                 "Позволяет ввести ложный пароль при физической угрозе. Открывается правдоподобное ложное хранилище. Доказать существование основного хранилища математически невозможно."),
+                ("🔒 Привязка к оборудованию (Hardware Binding)",
+                 "Шифрование привязывается к материнской плате и ID процессора. Украденный файл .mvat невозможно открыть на другом компьютере даже зная пароль.")
+            ]
+        }
 
-            ("🔒 Cihaza Özel Donanım İmzası (Hardware Binding)",
-             "Kasanızı oluştururken bu seçeneği işaretlediğinizde, anahtar türetimi bilgisayarınızın anakart ve donanım kimliğiyle harmanlanır. Kasa dosyanız (.mvat) çalınıp başka bir bilgisayara götürülse bile şifreyi bilseler dahi açılamaz.")
-        ]
-
-        for title, body in guide_texts:
+        lang = i18n.CURRENT_LANG if i18n.CURRENT_LANG in guide_texts else "en"
+        for title, body in guide_texts[lang]:
             card = ctk.CTkFrame(scroll, fg_color="#0f172a", corner_radius=10, border_width=1, border_color="#1e293b")
             card.pack(fill="x", pady=8, padx=4)
             ctk.CTkLabel(card, text=title, font=ctk.CTkFont(size=15, weight="bold"), text_color="#38bdf8").pack(anchor="w", padx=16, pady=(12, 4))
             ctk.CTkLabel(card, text=body, font=ctk.CTkFont(size=12), text_color="#cbd5e1", justify="left", wraplength=720).pack(anchor="w", padx=16, pady=(0, 14))
 
     # =========================================================================
-    # 9. ASKERİ DENETİM & FIPS 140-3 ÖZ-TEST GÜNLÜĞÜ (AUDIT TRAIL)
+    # 9. MILITARY AUDIT TRAIL & FIPS 140-3 SELF-TEST LOGS
     # =========================================================================
     def _render_audit_view(self, parent):
         scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         scroll.pack(fill="both", expand=True)
 
-        # FIPS 140-3 POST Test Kartı
         post_card = ctk.CTkFrame(scroll, fg_color="#0f172a", corner_radius=10, border_width=1, border_color="#1e293b")
         post_card.pack(fill="x", pady=(0, 10))
 
-        ctk.CTkLabel(post_card, text="🛡️ FIPS 140-3 Power-On Self-Tests (POST / Açılış Öz-Testleri)", font=ctk.CTkFont(size=15, weight="bold"), text_color="#38bdf8").pack(anchor="w", padx=16, pady=(12, 4))
-        ctk.CTkLabel(post_card, text="Sistem açılışında NIST test vektörleri (KAT) ve donanımsal entropi havuzu otomatik doğrulanmıştır.", font=ctk.CTkFont(size=11), text_color="#94a3b8").pack(anchor="w", padx=16, pady=(0, 8))
+        ctk.CTkLabel(post_card, text=get_text("audit_title"), font=ctk.CTkFont(size=15, weight="bold"), text_color="#38bdf8").pack(anchor="w", padx=16, pady=(12, 4))
+        ctk.CTkLabel(post_card, text=get_text("audit_desc"), font=ctk.CTkFont(size=11), text_color="#94a3b8").pack(anchor="w", padx=16, pady=(0, 8))
 
         tests = getattr(self, "post_results", {}).get("tests", [])
         for t in tests:
@@ -1589,7 +1749,6 @@ class AegisVaultApp(ctk.CTk):
             ctk.CTkLabel(t_row, text=f"{icon} {t['name']}", font=ctk.CTkFont(size=12, weight="bold"), text_color="#4ade80" if t["passed"] else "#ef4444").pack(side="left")
             ctk.CTkLabel(t_row, text=f"- {t['details']}", font=ctk.CTkFont(size=11), text_color="#cbd5e1").pack(side="left", padx=8)
 
-        # Aksiyon Butonları (Bütünlük Doğrulama & Acil İmha)
         act_box = ctk.CTkFrame(scroll, fg_color="transparent")
         act_box.pack(fill="x", pady=8)
 
@@ -1601,18 +1760,17 @@ class AegisVaultApp(ctk.CTk):
                 messagebox.showerror("Audit Integrity FAILED", f"❌ {msg}")
 
         def trigger_zeroize():
-            msg = f"DİKKAT: '{self.selected_profile}' profili ve diskteki şifreli dosyalar rastgele baytlarla (DoD 5220.22-M) kalıcı olarak imha edilecektir.\nBu işlem GERİ ALINAMAZ!\n\nDevam edilsin mi?"
+            msg = get_text("audit_zeroize_confirm_1", profile=self.selected_profile)
             if messagebox.askyesno("EMERGENCY ZEROIZE", msg):
-                if messagebox.askyesno("SON ONAY", "Tüm anahtarlar ve veriler tamamen yok edilecek. Emin misiniz?"):
+                if messagebox.askyesno("CONFIRMATION", get_text("audit_zeroize_confirm_2")):
                     military_audit.emergency_zeroize_vault(self.selected_profile)
-                    messagebox.showinfo("Zeroize Complete", "Askeri sıfırlama tamamlandı. Uygulama kapatılıyor.")
+                    messagebox.showinfo("Zeroize Complete", get_text("audit_zeroize_complete"))
                     sys.exit(0)
 
-        ctk.CTkButton(act_box, text="🔍 Olay Günlüğü Zincirini Doğrula (Hash-Chain Verify)", fg_color="#0284c7", command=verify_chain, height=36).pack(side="left", padx=4)
-        ctk.CTkButton(act_box, text="⚠️ Acil Durum Kriptografik İmhası (Emergency Zeroize)", fg_color="#7f1d1d", hover_color="#991b1b", command=trigger_zeroize, height=36).pack(side="right", padx=4)
+        ctk.CTkButton(act_box, text=get_text("audit_btn_verify"), fg_color="#0284c7", command=verify_chain, height=36).pack(side="left", padx=4)
+        ctk.CTkButton(act_box, text=get_text("audit_btn_zeroize"), fg_color="#7f1d1d", hover_color="#991b1b", command=trigger_zeroize, height=36).pack(side="right", padx=4)
 
-        # Olay Günlüğü Akışı
-        log_head = ctk.CTkLabel(scroll, text="📜 Kriptografik Olay Akışı (Tamper-Evident Merkle Trail):", font=ctk.CTkFont(size=14, weight="bold"))
+        log_head = ctk.CTkLabel(scroll, text=get_text("audit_log_title"), font=ctk.CTkFont(size=14, weight="bold"))
         log_head.pack(anchor="w", pady=(10, 4))
 
         events = military_audit.CryptographicAuditTrail.get_recent_events(limit=25)
@@ -1622,8 +1780,8 @@ class AegisVaultApp(ctk.CTk):
 
             top_line = ctk.CTkFrame(ev_card, fg_color="transparent")
             top_line.pack(fill="x", padx=12, pady=(6, 2))
-            ctk.CTkLabel(top_line, text=f"Blok #{ev['index']} [{ev['timestamp']}]", font=ctk.CTkFont(size=11, weight="bold"), text_color="#38bdf8").pack(side="left")
-            ctk.CTkLabel(top_line, text=f"Olay: {ev['event_type']} ({ev['actor']})", font=ctk.CTkFont(size=11), text_color="#f8fafc").pack(side="left", padx=10)
+            ctk.CTkLabel(top_line, text=f"Block #{ev['index']} [{ev['timestamp']}]", font=ctk.CTkFont(size=11, weight="bold"), text_color="#38bdf8").pack(side="left")
+            ctk.CTkLabel(top_line, text=f"Event: {ev['event_type']} ({ev['actor']})", font=ctk.CTkFont(size=11), text_color="#f8fafc").pack(side="left", padx=10)
 
             hash_txt = f"Hash: {ev['hash'][:24]}... | Prev: {ev['prev_hash'][:16]}..."
             ctk.CTkLabel(ev_card, text=f"{ev['details']} | {hash_txt}", font=ctk.CTkFont(family="Consolas", size=10), text_color="#64748b").pack(anchor="w", padx=12, pady=(0, 6))

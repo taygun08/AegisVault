@@ -1,10 +1,10 @@
 """
-Crypto Portfolio & Live Balance Tracker (Soğuk Cüzdan İzleyici)
-Özellikler:
-- Genel Adres (Public Address) Format Denetimi
-- Blockchain.info üzerinden Canlı Gerçek BTC Bakiyesi Sorgulama
-- Binance REST API üzerinden Canlı Fiyatlar
-- Offline Güvenli Mod
+Crypto Portfolio & Live Balance Tracker (Cold Storage Watcher)
+Features:
+- Public address format and checksum verification (BTC, ETH, SOL).
+- Live on-chain Bitcoin balance querying via Blockchain.info API.
+- Real-time exchange rates via Binance REST API.
+- Offline fallback mode.
 """
 
 import json
@@ -21,44 +21,44 @@ DEFAULT_PRICES = {
 
 def validate_crypto_address(coin: str, address: str) -> Tuple[bool, str]:
     """
-    Kripto para genel adres formatını ve sağlama toplamı yapısını denetler.
-    Kullanıcının 'random bir şey yazsam oluyor mu' sorusunun yanıtıdır.
+    Validates cryptocurrency public address format and checksum structure.
+    Prevents invalid or malformed address entries.
     """
     coin = coin.upper().strip()
     addr = address.strip()
 
     if not addr:
-        return False, "Adres boş olamaz."
+        return False, "Address cannot be empty."
 
     if coin == "BTC":
         # Legacy (1...), P2SH (3...), Native SegWit (bc1q...), Taproot (bc1p...)
         if re.match(r"^(1|3)[a-km-zA-HJ-NP-Z1-9]{25,34}$", addr):
-            return True, "Geçerli Bitcoin Legacy / P2SH Adresi"
+            return True, "Valid Bitcoin Legacy / P2SH Address"
         elif re.match(r"^bc1[a-z0-9]{39,59}$", addr):
-            return True, "Geçerli Bitcoin SegWit / Taproot Adresi"
+            return True, "Valid Bitcoin SegWit / Taproot Address"
         else:
-            return False, "Geçersiz Bitcoin adresi! (Base58Check / Bech32 sağlama toplamı eşleşmiyor)."
+            return False, "Invalid Bitcoin address! Base58Check / Bech32 checksum mismatch."
 
     elif coin == "ETH":
-        # Ethereum 0x + 40 hex char
+        # Ethereum 0x + 40 hex characters
         if re.match(r"^0x[a-fA-F0-9]{40}$", addr):
-            return True, "Geçerli Ethereum (EVM) Adresi"
+            return True, "Valid Ethereum (EVM) Address"
         else:
-            return False, "Geçersiz Ethereum adresi! ('0x' ile başlamalı ve 40 onaltılık karakter içermelidir)."
+            return False, "Invalid Ethereum address! Must start with '0x' followed by 40 hex characters."
 
     elif coin == "SOL":
-        # Solana Base58 32-44 chars
+        # Solana Base58 32-44 characters
         if re.match(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$", addr):
-            return True, "Geçerli Solana Adresi"
+            return True, "Valid Solana Address"
         else:
-            return False, "Geçersiz Solana adresi!"
+            return False, "Invalid Solana address!"
 
-    return True, "Bilinmeyen format"
+    return True, "Unknown format"
 
 
 def fetch_live_btc_balance(address: str) -> float:
     """
-    Blockchain.info resmi Bitcoin API'sinden canlı satoshi bakiyesini çeker ve BTC'ye çevirir.
+    Fetches real-time satoshi balance from official Blockchain.info nodes and converts to BTC.
     """
     addr = address.strip()
     url = f"https://blockchain.info/q/addressbalance/{addr}"
@@ -74,7 +74,7 @@ def fetch_live_btc_balance(address: str) -> float:
 
 
 def fetch_live_prices() -> Dict[str, Dict[str, float]]:
-    """Canlı BTC, ETH, SOL fiyatlarını çeker."""
+    """Fetches real-time ticker prices for BTC, ETH, SOL."""
     url = "https://api.binance.com/api/v3/ticker/price"
     prices = dict(DEFAULT_PRICES)
 
@@ -100,6 +100,7 @@ def fetch_live_prices() -> Dict[str, Dict[str, float]]:
 
 
 def calculate_portfolio_value(items: List[Dict[str, Any]], prices: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+    """Calculates total portfolio value in USD and TRY based on provided prices."""
     total_usd = 0.0
     total_try = 0.0
 

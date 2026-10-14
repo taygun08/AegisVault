@@ -1,9 +1,9 @@
 """
 Cryptographic Chat & Secure Armored Messenger
-Özellikler:
-- Uçtan Uca Şifreli Mesajlaşma (E2EE)
-- AES-256-GCM + scrypt Zırhlı Mesaj Formatı (AEGIS-MSG-v1)
-- Tam Bütünlük Doğrulaması (Kurcalanamaz / Değiştirilemez)
+Capabilities:
+- End-to-End Encrypted Messaging (E2EE)
+- AES-256-GCM + scrypt Armored Envelope Format (AEGIS-MSG-v1)
+- Authenticated Data Integrity (Tamper-Proof GHASH Tag)
 """
 
 import os
@@ -18,15 +18,15 @@ MSG_PREFIX = "AEGIS-MSG-v1"
 
 def encrypt_message(plaintext: str, shared_passkey: str) -> str:
     """
-    Metin mesajını ortak parola ile AES-256-GCM kullanarak zırhlar.
-    Çıktı WhatsApp, Telegram veya e-posta ile kopyalanıp gönderilebilir.
+    Encrypts a plaintext message using AES-256-GCM and a shared passkey.
+    The resulting armored string can be copied via any insecure transport channel.
     """
     if not plaintext.strip():
-        raise ValueError("Mesaj metni boş olamaz.")
+        raise ValueError("Message body cannot be empty.")
     if not shared_passkey.strip():
-        raise ValueError("Ortak parola boş olamaz.")
+        raise ValueError("Shared passkey cannot be empty.")
 
-    # Zarf verisi (Mesaj + Zaman Damgası)
+    # Envelope structure containing message content and ISO timestamp
     envelope = {
         "text": plaintext.strip(),
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -34,17 +34,16 @@ def encrypt_message(plaintext: str, shared_passkey: str) -> str:
     raw_payload = json.dumps(envelope, ensure_ascii=False)
     encrypted_armored = MilitaryVault.encrypt(raw_payload, shared_passkey)
 
-    # İnsan tarafından tanınabilir zırhlı token
     return f"{MSG_PREFIX}:{encrypted_armored}"
 
 
 def decrypt_message(token: str, shared_passkey: str) -> Dict[str, Any]:
     """
-    Zırhlı mesaj token'ını çözer ve bütünlüğünü doğrular.
+    Decrypts an armored message token and validates cryptographic integrity.
     """
     token = token.strip()
     if not token.startswith(MSG_PREFIX + ":"):
-        raise ValueError("Geçersiz mesaj formatı! 'AEGIS-MSG-v1:' ile başlamalıdır.")
+        raise ValueError("Invalid message format! Must start with 'AEGIS-MSG-v1:'.")
 
     armored_content = token[len(MSG_PREFIX) + 1:]
     decrypted_bytes = MilitaryVault.decrypt(armored_content, shared_passkey)

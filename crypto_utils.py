@@ -1,8 +1,8 @@
 """
 Crypto Utilities:
-1. Shamir's Secret Sharing (SSS) - Askeri Düzey Eşikli Parçalama (K-of-N Threshold Cryptography)
-2. BIP-39 Seed Phrase Analiz ve Sağlık Kontrolü
-3. Entropi ve Parola Güvenlik Skoru Hesaplayıcı
+1. Shamir's Secret Sharing (SSS) - Military-Grade K-of-N Threshold Cryptography
+2. BIP-39 Seed Phrase Analysis & Validation
+3. Shannon Entropy & Password Strength Calculator
 """
 
 import math
@@ -16,35 +16,35 @@ PRIME_257 = 257
 
 def shamir_split(secret: str, threshold: int, total_shares: int) -> List[str]:
     """
-    Gizli veriyi (Seed Phrase, Master Key vb.) 'total_shares' adet parçaya böler.
-    Veriyi geri kurtarmak için 'threshold' adet parçanın bir araya gelmesi gerekir.
+    Splits sensitive data (Seed Phrase, Master Key, etc.) into 'total_shares' parts.
+    Reconstructing the secret requires at least 'threshold' parts.
     
-    Örnek: 3-of-5 sisteminde 5 parça oluşturulur, herhangi 3 tanesi yeterlidir.
+    Example: In a 3-of-5 scheme, 5 shares are generated; any 3 are sufficient to recover.
     """
     if threshold > total_shares:
-        raise ValueError("Eşik (threshold), toplam parça sayısından büyük olamaz.")
+        raise ValueError("Threshold cannot be greater than total shares.")
     if threshold < 2:
-        raise ValueError("Eşik en az 2 olmalıdır.")
+        raise ValueError("Threshold must be at least 2.")
 
     data = secret.encode("utf-8")
     shares_dict = {x: bytearray() for x in range(1, total_shares + 1)}
 
     for b in data:
         while True:
-            # Rastgele k-1 katsayılı polinom: f(x) = b + c1*x + c2*x^2 + ... (mod 257)
+            # Random polynomial of degree k-1: f(x) = b + c1*x + c2*x^2 + ... (mod 257)
             coeffs = [b] + [secrets.randbelow(PRIME_257) for _ in range(threshold - 1)]
             vals = []
             for x in range(1, total_shares + 1):
                 val = sum(c * (x ** i) for i, c in enumerate(coeffs)) % PRIME_257
                 vals.append(val)
             
-            # Tüm parçaların byte (0-255) sınırında kalmasını sağla (Rejection sampling)
+            # Ensure all shares fit into byte (0-255) range via rejection sampling
             if all(v < 256 for v in vals):
                 for x, v in zip(range(1, total_shares + 1), vals):
                     shares_dict[x].append(v)
                 break
 
-    # Parçaları insan tarafından okunabilir zırhlı formatta paketle
+    # Package shares in human-readable armored format
     formatted_shares = []
     for x in range(1, total_shares + 1):
         hex_data = bytes(shares_dict[x]).hex()
@@ -55,11 +55,10 @@ def shamir_split(secret: str, threshold: int, total_shares: int) -> List[str]:
 
 def shamir_combine(shares: List[str]) -> str:
     """
-    K adet Shamir parçasını bir araya getirerek Lagrange İnterpolasyonu ile
-    orijinal gizli veriyi yeniden inşa eder.
+    Reconstructs the original secret from K Shamir shares using Lagrange interpolation.
     """
     if not shares:
-        raise ValueError("Hiçbir parça girilmedi.")
+        raise ValueError("No shares provided.")
 
     parsed_shares: List[Tuple[int, bytes]] = []
     threshold_expected = None
@@ -71,24 +70,24 @@ def shamir_combine(shares: List[str]) -> str:
             continue
         m = pattern.match(s)
         if not m:
-            raise ValueError(f"Geçersiz parça formatı: {s[:25]}...")
+            raise ValueError(f"Invalid share format: {s[:25]}...")
         x = int(m.group(1))
         k = int(m.group(2))
         hex_data = m.group(4)
         if threshold_expected is None:
             threshold_expected = k
         elif threshold_expected != k:
-            raise ValueError("Farklı eşik değerlerine sahip parçalar karıştırılamaz.")
+            raise ValueError("Shares with different threshold parameters cannot be combined.")
         parsed_shares.append((x, bytes.fromhex(hex_data)))
 
-    # Benzersiz x değerlerini kontrol et
+    # Verify unique share coordinates
     unique_x = set(x for x, _ in parsed_shares)
     if len(unique_x) < threshold_expected:
         raise ValueError(
-            f"Yetersiz parça sayısı! Gereken en az: {threshold_expected}, Mevcut benzersiz: {len(unique_x)}"
+            f"Insufficient unique shares! Required: {threshold_expected}, provided: {len(unique_x)}"
         )
 
-    # Sadece ilk k adet benzersiz parçayı kullan
+    # Use only the first K unique shares
     used_shares = []
     seen = set()
     for x, data in parsed_shares:
@@ -100,7 +99,7 @@ def shamir_combine(shares: List[str]) -> str:
 
     data_len = len(used_shares[0][1])
     if not all(len(d) == data_len for _, d in used_shares):
-        raise ValueError("Parça uzunlukları eşleşmiyor. Veri bozulmuş olabilir.")
+        raise ValueError("Share lengths mismatch. Data might be corrupted.")
 
     result_bytes = bytearray()
     for idx in range(data_len):
@@ -121,7 +120,7 @@ def shamir_combine(shares: List[str]) -> str:
 
 def validate_bip39_seed(phrase: str) -> dict:
     """
-    Bitcoin / EVM 12 veya 24 kelimelik tohum (seed phrase) yapısını analiz eder.
+    Validates Bitcoin / EVM 12 or 24-word seed phrase structure.
     """
     words = phrase.strip().split()
     word_count = len(words)
@@ -129,11 +128,10 @@ def validate_bip39_seed(phrase: str) -> dict:
     
     is_valid_len = word_count in valid_lengths
     
-    # Karakter ve kelime biçimi kontrolü (Sadece küçük harfler ve boşluklar)
+    # Character and word format check (lowercase alpha only)
     valid_format = all(re.match(r"^[a-z]+$", w) for w in words) if words else False
 
-    # Entropi hesapla
-    # 12 kelime = 128 bit, 24 kelime = 256 bit
+    # Calculate theoretical entropy bits (12 words = 128 bits, 24 words = 256 bits)
     bit_entropy = (word_count * 11) - (word_count // 3) if is_valid_len else 0
 
     return {
@@ -141,14 +139,14 @@ def validate_bip39_seed(phrase: str) -> dict:
         "is_valid_length": is_valid_len,
         "is_valid_format": valid_format,
         "entropy_bits": bit_entropy,
-        "standard_status": "Geçerli BIP-39 Formatı" if (is_valid_len and valid_format) else "Bozuk veya Standart Dışı Kelime Sayısı",
+        "standard_status": "Valid BIP-39 Format" if (is_valid_len and valid_format) else "Invalid Word Count or Character Encoding",
     }
 
 
 def calculate_password_entropy(password: str) -> dict:
-    """Parolanın şannon entropisini ve kırılma zorluğunu puanlar."""
+    """Calculates Shannon entropy and strength score for a given password."""
     if not password:
-        return {"entropy": 0, "score": 0, "label": "Boş", "color": "#ef4444"}
+        return {"entropy": 0, "score": 0, "label": "Empty", "color": "#ef4444"}
 
     pool_size = 0
     if re.search(r"[a-z]", password):
@@ -164,19 +162,19 @@ def calculate_password_entropy(password: str) -> dict:
 
     if entropy < 45:
         score = 1
-        label = "Zayıf (Kolay Kırılabilir)"
+        label = "Weak (Easily Crackable)"
         color = "#ef4444"
     elif entropy < 70:
         score = 2
-        label = "Orta Düzey"
+        label = "Moderate"
         color = "#f59e0b"
     elif entropy < 100:
         score = 3
-        label = "Güçlü (Güvenli)"
+        label = "Strong"
         color = "#3b82f6"
     else:
         score = 4
-        label = "Askeri Sınıf (Kırılması İmkansız)"
+        label = "Military-Grade (Virtually Uncrackable)"
         color = "#10b981"
 
     return {

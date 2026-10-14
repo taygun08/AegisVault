@@ -1,10 +1,10 @@
 """
-Military-Grade Cryptographic Vault (Deneysel & Cold-Storage Kripto Kasası)
-Standartlar:
-- Simetrik Şifreleme: AES-256-GCM (NIST SP 800-38D / NSA CNSA Suite)
-- Anahtar Türetme (KDF): scrypt (BIP-38 & Ethereum Web3 Keystore Standardı, GPU/ASIC dirençli)
-- Bütünlük & Kurcalama Koruması: AEAD (Authenticated Encryption with Associated Data)
-- Entropi: Kriptografik Güvenli Donanımsal/İşletim Sistemi Rastgele Sayı Üreteci (CSPRNG - os.urandom)
+Military-Grade Cryptographic Vault (Cold-Storage Cryptographic Engine)
+Standards:
+- Symmetric Encryption: AES-256-GCM (NIST SP 800-38D / NSA CNSA Suite)
+- Key Derivation Function (KDF): scrypt (BIP-38 & Ethereum Web3 Keystore Standard, GPU/ASIC resistant)
+- Authenticated Data Integrity: AEAD (Authenticated Encryption with Associated Data)
+- Entropy Source: Cryptographically Secure Pseudo-Random Number Generator (CSPRNG - os.urandom)
 """
 
 import os
@@ -17,37 +17,37 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 
 class VaultSecurityError(Exception):
-    """Yetkisiz erişim, kurcalama veya yanlış parola durumunda fırlatılır."""
+    """Raised upon unauthorized access, data tampering, or authentication failure."""
     pass
 
 
 class MilitaryVault:
     """
-    AES-256-GCM ve scrypt tabanlı yüksek güvenlikli askeri sınıf şifreleme motoru.
+    High-assurance military-grade cryptographic engine combining AES-256-GCM and scrypt.
     
-    Özellikler:
-    - 256-bit anahtar uzunluğu (En üst düzey askeri sınıf gizlilik)
-    - 96-bit benzersiz Nonce/IV (NIST standardı, asla tekrar kullanılmaz)
-    - scrypt bellek zorlamalı KDF (Kaba kuvvet ve GPU/ASIC küme saldırılarını engeller)
-    - Başlık Doğrulama (AAD): Versiyon ve KDF parametreleri kurcalanamaz.
+    Architecture:
+    - 256-bit key length (Top Secret classification equivalent)
+    - 96-bit unique Nonce/IV per encryption (NIST SP 800-38D compliant)
+    - scrypt memory-hard KDF (Defeats GPU/ASIC brute-force dictionary attacks)
+    - Authenticated Additional Data (AAD): Cryptographic parameters and versioning sealed into header
     """
 
     MAGIC_BYTES = b"MVAULT"  # 6 bytes
     VERSION = 1               # 1 byte (v1)
-    KDF_SCRYPT = 1            # 1 byte tanımlayıcı
+    KDF_SCRYPT = 1            # 1 byte identifier
 
-    # Güvenli Varsayılan scrypt Parametreleri (BIP-38 / Finansal Düzey)
-    # N=32768 (2^15), r=8, p=1 (~32MB RAM gerektirir, GPU brute-force'u felç eder)
+    # Secure default scrypt parameters (BIP-38 financial standard)
+    # N=32768 (2^15), r=8, p=1 (~32MB RAM allocation required per derivation)
     DEFAULT_LOG_N = 15
     DEFAULT_R = 8
     DEFAULT_P = 1
-    SALT_SIZE = 16            # 128-bit kriptografik tuz (CSPRNG)
-    NONCE_SIZE = 12           # 96-bit GCM Nonce (NIST SP 800-38D)
-    KEY_LENGTH = 32           # 256-bit AES anahtarı
+    SALT_SIZE = 16            # 128-bit CSPRNG salt
+    NONCE_SIZE = 12           # 96-bit GCM Nonce
+    KEY_LENGTH = 32           # 256-bit AES key
 
     HEADER_FORMAT = ">6sBBBI I 16s 12s"
-    # Alanlar:
-    # 6s: Magic (MVAULT)
+    # Structure:
+    # 6s: Magic bytes (MVAULT)
     # B : Version (1)
     # B : KDF Type (1 = scrypt)
     # B : log_n (15)
@@ -61,8 +61,8 @@ class MilitaryVault:
     @classmethod
     def _zero_memory(cls, target: Union[bytearray, memoryview]):
         """
-        Hassas veriyi (anahtar/parola) Python bellek çöp toplayıcısından
-        önce sıfırlayarak RAM dump saldırılarına karşı yüzeyi küçültür.
+        Zeroes out sensitive memory buffers (passwords/keys) before garbage collection
+        to minimize exposure to memory dump attacks.
         """
         if isinstance(target, bytearray):
             for i in range(len(target)):
@@ -70,7 +70,7 @@ class MilitaryVault:
 
     @classmethod
     def _derive_key(cls, password: bytes, salt: bytes, n: int, r: int, p: int) -> bytes:
-        """Paroladan scrypt algoritması ile 256-bit (32 byte) anahtar türetir."""
+        """Derives a 256-bit (32-byte) key from the password using scrypt."""
         kdf = Scrypt(
             salt=salt,
             length=cls.KEY_LENGTH,
@@ -83,14 +83,14 @@ class MilitaryVault:
     @classmethod
     def encrypt(cls, plaintext: Union[str, bytes], password: str) -> str:
         """
-        Metin veya ikili veriyi AES-256-GCM ile şifreler ve taşınabilir Base64 zarfı döndürür.
+        Encrypts plaintext or binary data using AES-256-GCM and returns a portable Base64 envelope.
         
         Args:
-            plaintext: Şifrelenecek gizli veri (Bitcoin Seed Phrase, özel anahtar, metin vb.)
-            password: Kullanıcı ana parolası
+            plaintext: Sensitive secret data (Bitcoin seed, private key, file bytes)
+            password: Master user password
             
         Returns:
-            Zırhlı Base64 string (Vault Envelope)
+            Armored Base64 string (Vault Envelope)
         """
         if isinstance(plaintext, str):
             plaintext_bytes = plaintext.encode("utf-8")
@@ -99,7 +99,7 @@ class MilitaryVault:
 
         password_bytes = bytearray(password.encode("utf-8"))
 
-        # 1. Kriptografik Olarak Güvenli Rastgele Tuz (Salt) ve Nonce (IV) Üret
+        # 1. Generate cryptographically secure random salt and nonce
         salt = os.urandom(cls.SALT_SIZE)
         nonce = os.urandom(cls.NONCE_SIZE)
 
@@ -108,11 +108,10 @@ class MilitaryVault:
         r = cls.DEFAULT_R
         p = cls.DEFAULT_P
 
-        # 2. scrypt ile 256-bit Askeri Anahtar Türet
+        # 2. Derive 256-bit key via scrypt
         key = bytearray(cls._derive_key(bytes(password_bytes), salt, n, r, p))
 
-        # 3. Kapsül Başlığını (Header) Oluştur
-        # Bu başlık AAD (Associated Authenticated Data) olarak kullanılacak.
+        # 3. Construct capsule header as Authenticated Additional Data (AAD)
         header = struct.pack(
             cls.HEADER_FORMAT,
             cls.MAGIC_BYTES,
@@ -126,45 +125,44 @@ class MilitaryVault:
         )
 
         try:
-            # 4. AES-256-GCM ile Şifrele + Bütünlük Doğrulama Etiketi (Auth Tag) Ekle
-            # AAD olarak 'header' verilir. Böylece parametreler asla kurcalanamaz.
+            # 4. Encrypt with AES-256-GCM and bind header as AAD
             aesgcm = AESGCM(bytes(key))
             ciphertext = aesgcm.encrypt(nonce, plaintext_bytes, associated_data=header)
 
-            # 5. Başlık + Şifreli Metin (Ciphertext + 16 byte Tag) Birleştir
+            # 5. Pack header + ciphertext (including 16-byte authentication tag)
             full_payload = header + ciphertext
             armored = base64.b64encode(full_payload).decode("ascii")
             return armored
 
         finally:
-            # Bellek Temizliği (RAM Hijyen)
+            # RAM hygiene: zero out sensitive buffers
             cls._zero_memory(password_bytes)
             cls._zero_memory(key)
 
     @classmethod
     def decrypt(cls, armored_payload: str, password: str) -> bytes:
         """
-        Zırhlı Base64 şifreli veriyi çözer ve bütünlüğünü doğrular.
+        Decrypts an armored Base64 envelope and verifies cryptographic integrity.
         
         Args:
-            armored_payload: encrypt() çıktısı olan Base64 paket
-            password: Doğru parola
+            armored_payload: Base64 string produced by encrypt()
+            password: User master password
             
         Returns:
-            Çözülmüş orijinal veri (bytes)
+            Decrypted raw bytes
             
         Raises:
-            VaultSecurityError: Yanlış parola, bozuk veri veya kurcalanmış paket tespiti.
+            VaultSecurityError: On invalid password, payload tampering, or authentication failure.
         """
         try:
             raw_data = base64.b64decode(armored_payload.strip().encode("ascii"))
         except Exception as e:
-            raise VaultSecurityError("Geçersiz paket formatı: Base64 çözülemedi.") from e
+            raise VaultSecurityError("Invalid packet format: Base64 decoding failed.") from e
 
-        if len(raw_data) < cls.HEADER_SIZE + 16:  # 16 = GCM tag boyutu
-            raise VaultSecurityError("Paket boyutu çok küçük veya eksik.")
+        if len(raw_data) < cls.HEADER_SIZE + 16:  # 16 = GCM auth tag size
+            raise VaultSecurityError("Packet truncated or corrupted.")
 
-        # 1. Başlığı Ayrıştır
+        # 1. Parse and validate header
         header = raw_data[:cls.HEADER_SIZE]
         ciphertext = raw_data[cls.HEADER_SIZE:]
 
@@ -173,37 +171,36 @@ class MilitaryVault:
                 cls.HEADER_FORMAT, header
             )
         except struct.error as e:
-            raise VaultSecurityError("Başlık yapısı bozuk.") from e
+            raise VaultSecurityError("Header structure corrupted.") from e
 
         if magic != cls.MAGIC_BYTES:
-            raise VaultSecurityError("Geçersiz kasa formatı (Magic Bytes eşleşmiyor).")
+            raise VaultSecurityError("Invalid vault format (Magic bytes mismatch).")
 
         if version != cls.VERSION:
-            raise VaultSecurityError(f"Desteklenmeyen kasa versiyonu: {version}")
+            raise VaultSecurityError(f"Unsupported vault version: {version}")
 
         if kdf_type != cls.KDF_SCRYPT:
-            raise VaultSecurityError("Desteklenmeyen KDF algoritması.")
+            raise VaultSecurityError("Unsupported KDF algorithm identifier.")
 
-        # Parametre limit kontrolü (DoS saldırılarına karşı önlem)
-        if log_n > 22 or log_n < 10:  # 1024 ile 4M iterasyon arası
-            raise VaultSecurityError("Güvenlik sınırları dışındaki scrypt parametresi.")
+        # Parameter sanity limits to prevent DoS attacks
+        if log_n > 22 or log_n < 10:
+            raise VaultSecurityError("scrypt parameters outside security thresholds.")
 
         n = 1 << log_n
         password_bytes = bytearray(password.encode("utf-8"))
 
         try:
-            # 2. Anahtarı Aynı Parametrelerle Türet
+            # 2. Derive key using identical parameters
             key = bytearray(cls._derive_key(bytes(password_bytes), salt, n, r, p))
 
-            # 3. AES-256-GCM ile Çöz ve Doğrula
+            # 3. Decrypt and verify with AES-256-GCM
             aesgcm = AESGCM(bytes(key))
             decrypted = aesgcm.decrypt(nonce, ciphertext, associated_data=header)
             return decrypted
 
         except Exception as e:
-            # GCM kimlik doğrulama etiketi eşleşmezse bu hataya düşer.
             raise VaultSecurityError(
-                "Şifre çözme BAŞARISIZ! (Yanlış parola veya veri kurcalanmış/bozulmuş)."
+                "Decryption FAILED! Incorrect password or data has been modified/tampered with."
             ) from e
         finally:
             cls._zero_memory(password_bytes)
@@ -212,7 +209,7 @@ class MilitaryVault:
 
     @classmethod
     def encrypt_file(cls, input_file_path: str, output_file_path: str, password: str):
-        """Bir dosyayı doğrudan askeri standartta şifreler."""
+        """Encrypts an arbitrary file using military-grade standards."""
         with open(input_file_path, "rb") as f:
             data = f.read()
         encrypted_armored = cls.encrypt(data, password)
@@ -221,7 +218,7 @@ class MilitaryVault:
 
     @classmethod
     def decrypt_file(cls, input_file_path: str, output_file_path: str, password: str):
-        """Şifreli kasa dosyasını çözer ve hedefe yazar."""
+        """Decrypts a vault file and writes the plaintext output to disk."""
         with open(input_file_path, "r", encoding="utf-8") as f:
             encrypted_armored = f.read()
         decrypted_bytes = cls.decrypt(encrypted_armored, password)
@@ -230,48 +227,46 @@ class MilitaryVault:
 
 
 def run_self_test():
-    """Kasanın güvenlik, doğruluk ve kurcalama testlerini çalıştırır."""
+    """Runs verification self-tests on the cryptographic vault."""
     print("=" * 65)
-    print(" MILITARY-GRADE VAULT GÜVENLİK VE ENTEGRASYON TESTİ")
+    print(" MILITARY-GRADE VAULT SECURITY & INTEGRATION TEST")
     print("=" * 65)
 
-    # 1. Test: Kritik Bitcoin 24 Kelimelik Seed Phrase
     mock_btc_seed = (
         "witch collapse practice feed shame open despair creek "
         "road again ice least flame doctor immense metal "
         "flame doctor immense metal flame doctor immense metal"
     )
-    master_password = "Kullanici@Gizli!Parola9921#$"
+    master_password = "User@Secret!Password9921#$"
 
-    print("\n[+] 1. Adım: Bitcoin Seed Phrase Şifreleniyor...")
+    print("\n[+] Step 1: Encrypting Bitcoin Seed Phrase...")
     armored = MilitaryVault.encrypt(mock_btc_seed, master_password)
-    print(f"    Şifreli Çıktı (İlk 80 karakter): {armored[:80]}...")
-    print(f"    Toplam Kapsül Boyutu: {len(armored)} karakter (Base64)")
+    print(f"    Ciphertext preview: {armored[:60]}...")
+    print(f"    Capsule size: {len(armored)} characters (Base64)")
 
-    print("\n[+] 2. Adım: Doğru Parola ile Şifre Çözülüyor...")
+    print("\n[+] Step 2: Decrypting with correct password...")
     decrypted_bytes = MilitaryVault.decrypt(armored, master_password)
     decrypted_text = decrypted_bytes.decode("utf-8")
-    assert decrypted_text == mock_btc_seed, "HATA: Çözülen metin eşleşmedi!"
-    print("    [BAŞARILI] Veri birebir hatasız çözüldü.")
+    assert decrypted_text == mock_btc_seed, "FAIL: Decrypted text does not match!"
+    print("    [PASSED] Data decrypted successfully and verified.")
 
-    print("\n[+] 3. Adım: Yanlış Parola Testi Yapılıyor...")
+    print("\n[+] Step 3: Testing with incorrect password...")
     try:
-        MilitaryVault.decrypt(armored, "YanlisParola123")
-        print("    [HATA] Yanlış parola kabul edildi! (Güvenlik zafiyeti)")
+        MilitaryVault.decrypt(armored, "WrongPassword123")
+        print("    [FAIL] Wrong password was accepted!")
     except VaultSecurityError:
-        print("    [BAŞARILI] Yanlış parola derhal reddedildi (Auth Tag Mismatch).")
+        print("    [PASSED] Wrong password immediately rejected (Auth Tag Mismatch).")
 
-    print("\n[+] 4. Adım: Kurcalama ve Veri Manipülasyonu Testi (Bit-Flip Attack)...")
-    # Şifreli metnin ortasından 1 karakteri değiştirerek kurcalayalım
+    print("\n[+] Step 4: Testing bit-flip tampering attack...")
     tampered_armored = armored[:100] + ("A" if armored[100] != "A" else "B") + armored[101:]
     try:
         MilitaryVault.decrypt(tampered_armored, master_password)
-        print("    [HATA] Kurcalanmış veri kabul edildi!")
+        print("    [FAIL] Tampered payload was accepted!")
     except VaultSecurityError:
-        print("    [BAŞARILI] 1 bitlik kurcalama bile AEAD tarafından tespit edildi ve işlem iptal edildi.")
+        print("    [PASSED] 1-bit tampering detected by AEAD and operation aborted.")
 
     print("\n" + "=" * 65)
-    print(" TÜM ASKERİ STANDART DOĞRULAMA TESTLERİ BAŞARIYLA GEÇTİ!")
+    print(" ALL CRYPTOGRAPHIC STANDARDS VERIFIED SUCCESSFULLY!")
     print("=" * 65)
 
 

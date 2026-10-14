@@ -1,6 +1,6 @@
 """
-AegisVault Uluslararası Dil Desteği (i18n)
-Desteklenen Diller: Türkçe (tr), English (en), Русский (ru)
+AegisVault Internationalization (i18n) Module
+Supported Languages: Turkish (tr), English (en), Russian (ru)
 """
 
 LANGUAGES = {
@@ -11,13 +11,17 @@ LANGUAGES = {
 
 TRANSLATIONS = {
     "tr": {
+        # App Header & Navigation
         "app_title": "AegisVault 3.5 - Askeri Düzey Güvenlik & Kripto Ekosistemi",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Destekli Güvenlik Kasası",
         "status_active": "● AES-256-GCM | AKTİF",
         "status_decoy": "● DURESS / SAHTE MOD",
+        "fips_badge_passed": "● FIPS 140-3 POST: %100 GEÇTİ",
+        "fips_badge_failed": "● FIPS 140-3 POST: BAŞARISIZ",
         "nav_vault": "🔑 Güvenli Kasa",
         "nav_portfolio": "📊 Kripto Bakiye & Fiyat",
         "nav_p2p_chat": "💬 Canlı P2P Güvenli Sohbet",
+        "nav_airgap": "📲 Hava Boşluklu (Air-Gap) QR",
         "nav_shamir": "🧩 Shamir (SSS) Yedekleme",
         "nav_bip39": "🔍 BIP-39 Seed Analiz",
         "nav_audit": "📜 Askeri Olay Günlüğü (Audit)",
@@ -25,18 +29,35 @@ TRANSLATIONS = {
         "btn_check_update": "⚡ Güncellemeleri Denetle",
         "inactivity_notice": "⏱️ 2 dk hareketsizlikte otomatik kilitlenir.",
         
-        # Dashboard
+        # Dashboard & Vault View
         "search_placeholder": "🔍 Başlık veya kategoriye göre filtrele...",
         "total_items": "Kayıtlı Öğe",
         "btn_add_secret": "➕ Yeni Veri Ekle",
-        "empty_vault_msg": "Henüz kayıtlı bir veri bulunamadı.\n'Yeni Veri Ekle' butonuna basarak ilk Bitcoin tohumunuzu veya şifrenizi ekleyin.",
+        "btn_add_file": "📁 Şifreli Dosya Ekle",
+        "btn_export_file": "💾 Çöz & Dışa Aktar",
+        "empty_vault_msg": "Henüz kayıtlı bir veri bulunamadı.\n'Yeni Veri Ekle' veya 'Şifreli Dosya Ekle' butonuna basarak ilk kaydınızı oluşturun.",
         "btn_show": "👁️ Göster",
         "btn_hide": "👁️ Gizle",
         "btn_copy": "📋",
         "copied_alert": "Panoya kopyalandı!",
         "delete_confirm": "'{title}' kaydını kalıcı olarak silmek istiyor musunuz?",
+        "vault_file_display": "📄 {fname} ({size:,} Bayt - AES-256-GCM Korumalı)",
+        "vault_file_dialog_title": "Kasaya Eklenecek Dosyayı Seçin (PDF, Word, Excel, Resim, Anahtar)",
+        "vault_file_oversize_err": "Kasa performansı için dosya boyutu maksimum 15 MB olmalıdır!",
+        "vault_file_notes_orig": "Orijinal Konum: {path}",
+        "vault_file_added_success": "'{fname}' dosyası AES-256-GCM ile zırhlanarak kasaya güvenle eklendi!",
+        "vault_file_export_title": "Şifreli Dosyayı Çözüp Kaydedeceğiniz Konumu Seçin",
+        "vault_file_exported_success": "'{fname}' başarıyla çözüldü ve diske kaydedildi:\n{dest}",
+        "vault_file_export_err": "Dosya dışa aktarılamadı: {err}",
         
-        # Profil & Kilit
+        # Secret Categories
+        "cat_seed": "Bitcoin / Kripto Seed",
+        "cat_privkey": "Özel Anahtar (Private Key)",
+        "cat_pass": "Kullanıcı Parolası",
+        "cat_note": "Gizli Not",
+        "cat_file": "Şifreli Dosya / Belge",
+        
+        # Profile & Unlock Screens
         "profile_label": "Kullanıcı Profili:",
         "btn_new_profile": "➕ Yeni Profil Oluştur",
         "profile_name_placeholder": "Kullanıcı Adı (Örn: Ahmet, Finans, Kisisel)...",
@@ -48,19 +69,21 @@ TRANSLATIONS = {
         "duress_pass_placeholder": "Tehdit Parolası (Opsiyonel - Sahte Kasa)...",
         "btn_suggest_pass": "🎲 Güçlü Askeri Parola Öner",
         "btn_create_vault": "KASAYI OLUŞTUR VE BAŞLAT",
+        "btn_back_profiles": "← Mevcut Profillere Dön",
         "unlock_title": "🔒 Aegis Vault Kilitli",
         "unlock_desc": "AES-256-GCM ile şifrelenmiş kullanıcı kasası seçildi.\nErişmek için belirlediğiniz parolayı girin.",
         "unlock_btn": "KASANIN KİLİDİNİ AÇ",
         
-        # Modal
+        # Secret Modal
         "modal_add_title": "➕ Kasaya Yeni Veri Ekle",
         "field_title": "Kayıt Başlığı (Örn: Ledger Bitcoin Tohumu)",
         "field_secret": "Gizli Değer / Parola / Seed Phrase:",
         "btn_generate_pass": "🎲 32 Karakter Askeri Şifre Üret (CSPRNG)",
         "field_notes": "Ek Notlar (İsteğe bağlı)",
         "btn_save_vault": "KASAYA GÜVENLİ KAYDET",
+        "btn_save": "KAYDET",
         
-        # Shamir
+        # Shamir Secret Sharing
         "shamir_title": "🧩 Shamir's Secret Sharing (Eşikli Parçalama)",
         "shamir_desc": "💡 Bu Ne İşe Yarar?\nKritik Bitcoin tohumunuzu N parçaya böler. Örneğin 3-of-5 sisteminde 5 parça üretilir; herhangi 3 parça birleşmeden şifre ASLA çözülemez. 2 parça çalınsa veya yansa bile paranız güvendedir.",
         "tab_split": "Parçalara Böl (Split)",
@@ -69,50 +92,116 @@ TRANSLATIONS = {
         "label_k": "Gereken Eşik (K):",
         "btn_do_split": "PARÇALARI OLUŞTUR (SSS SPLIT)",
         "btn_do_combine": "PARÇALARI BİRLEŞTİR & KURTAR",
+        "shamir_success_msg": "Gizli veri Shamir parçalarından kurtarıldı!",
         
-        # Portföy
+        # Portfolio
         "portfolio_title": "📊 Soğuk Cüzdan Bakiye & Piyasa Takibi",
         "portfolio_desc": "💡 Güvenlik & Doğrulama Notu:\nBuraya ASLA özel anahtar (private key) girmeyiniz. Sadece genel adresinizi (Public Address - bc1q..., 0x...) giriniz. Sistem adresin sağlama toplamını (checksum) denetler ve Blockchain.info üzerinden gerçek canlı bakiyeyi çeker.",
         "btn_add_address": "➕ Adres Ekle",
         "total_portfolio_val": "Toplam Portföy Değeri",
         "crypto_price_live": "Canlı Kripto Fiyatları",
         "btn_refresh_prices": "🔄 Fiyatları & Bakiyeleri Güncelle",
+        "portfolio_empty": "Henüz eklenmiş adres yok.",
+        "portfolio_lbl_ph": "Cüzdan Etiketi (Örn: Ledger Nano BTC)",
+        "portfolio_addr_ph": "Genel Adres (Public Address - bc1q... / 0x...)",
+        "portfolio_amt_ph": "Miktar (Manuel veya Canlı Çek)",
+        "portfolio_btn_fetch": "📡 Adresi Doğrula ve Canlı Bakiyeyi Blokzincirden Çek",
+        "portfolio_refreshed_alert": "Fiyatlar ve BTC bakiyeleri başarıyla güncellendi!",
         
-        # Canlı P2P Chat
+        # Live P2P Chat
         "p2p_chat_title": "💬 Küresel Uçtan Uca Şifreli Sohbet Ağı (Türkiye ↔ Dünya)",
         "p2p_chat_desc": "💡 Bu Ne İşe Yarar?\nDünyanın neresinde olursanız olun (Türkiye ↔ İngiltere vb.), port açmaya veya IP yapılandırmasına gerek olmadan anında canlı ve uçtan uca AES-256-GCM şifreli iletişim kurar. Ortak 'Oda Adı' ve 'Oda Şifresi' belirlemeniz yeterlidir. İletilen tüm veri askeri kripto ile zırhlandığı için aracı sunucu yalnızca anlamsız şifreli metin (AEGIS-MSG-v1:...) görür.",
-        "p2p_tab_host": "Oda Kur (Host)",
-        "p2p_tab_join": "Odaya Katıl (Join)",
-        "p2p_room_key": "Oda Güvenlik Parolası:",
-        "btn_host_start": "Odayı Başlat (Dinle)",
-        "btn_join_start": "Odaya Bağlan",
         "btn_chat_connect": "🟢 Odaya Bağlan (Dünya Çapı)",
         "btn_chat_disconnect": "🔴 Odadan Ayrıl",
         "chat_nick": "Rumuz:",
         "chat_room_name": "Oda Adı (Kanal):",
         "chat_room_key": "Oda Şifresi (AES-256):",
         "btn_send": "GÖNDER",
-        "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu",
+        "chat_btn_rand_room": "🎲 Rastgele Oda Üret",
+        "chat_btn_copy_invite": "📋 Daveti Kopyala",
+        "chat_btn_zeroize": "🧹 Sohbeti Sıfırla (Zeroize)",
+        "chat_burn_label": "⏱️ 30s İmha",
+        "chat_btn_file": "📎 Dosya",
+        "chat_input_ph": "Uçtan uca AES-256-GCM şifreli mesajınızı yazın...",
+        "chat_status_disconnected": "⚪ Durum: Bağlantı yok. Bir oda adı ve şifresi girip bağlanın.",
+        "chat_status_connecting": "🟡 Küresel ağa bağlanılıyor (Türkiye ↔ Dünya)...",
+        "chat_status_connected": "🟢 Odaya Bağlanıldı: '{room}' | AES-256-GCM Şifreleme Aktif!",
+        "chat_status_left": "🔴 Sohbet odası bağlantısı kesildi.",
+        "chat_invite_template": "🛡️ AegisVault Askeri Güvenli Sohbet Daveti\n━━━━━━━━━━━━━━━━━━━━━\n📡 Oda Adı: {room}\n🔑 Oda Şifresi: {key}\n━━━━━━━━━━━━━━━━━━━━━\n(AegisVault uygulamasında bu bilgileri girip 'Odaya Bağlan' butonuna basın).",
+        "chat_alert_room_ready_title": "Oda Hazır",
+        "chat_alert_room_ready_msg": "🎲 Yeni Güvenli Oda ve Askeri Parola Üretildi!\n\nOda Adı: {room}\nOda Şifresi: {key}\n\nŞimdi '📋 Daveti Kopyala' butonuna basarak arkadaşınıza gönderebilirsiniz.",
+        "chat_alert_invite_copied_title": "Kopyalandı",
+        "chat_alert_invite_copied_msg": "Oda davet bilgileri panoya kopyalandı!\nArkadaşınıza gönderip aynı bilgilerle odaya bağlanmasını sağlayabilirsiniz.",
+        "chat_alert_not_connected": "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.",
+        "chat_file_dialog_title": "Şifrelenip Gönderilecek Dosyayı Seçin (Maks. 250 KB)",
+        "chat_file_limit_err": "Taktik anlık transfer için dosya boyutu maksimum 250 KB olmalıdır!\nSeçilen dosya: {size} KB.\n(Daha büyük dosyalar için lütfen 'Şifreli Dosya Kasası'nı kullanın).",
+        "chat_file_sent": "'{fname}' dosyası AES-256-GCM ile zırhlanarak karşı tarafa başarıyla iletildi!",
+        "chat_file_rx_hdr": "{sender} ({ts}) 📎 [ŞİFRELİ DOSYA TRANSFERİ]",
+        "chat_file_tx_hdr": "Siz ({ts}) 📎 [ŞİFRELİ DOSYA GÖNDERİLDİ]",
+        "chat_file_badge": "📄 {fname}  ({size:,} Bayt - AES-256-GCM Zırhlı)",
+        "chat_file_dl_btn": "💾 '{fname}' İndir & Çöz",
+        "chat_file_saved_msg": "Dosya başarıyla çözüldü ve kaydedildi:\n{dest}",
+        "chat_you": "Siz",
+        "chat_burn_badge": " ⏱️ [KENDİ KENDİNİ İMHA EDİYOR - 30 SN]",
         
-        # Airgap & Dosya Kasası
-        "nav_airgap": "📲 Hava Boşluklu (Air-Gap) QR",
-        "btn_add_file": "📁 Şifreli Dosya Ekle",
-        "btn_export_file": "💾 Dosyayı Çöz & Dışa Aktar",
-        "btn_send_file": "📎 Dosya Gönder",
+        # Airgap Optical QR
         "airgap_title": "📲 Hava Boşluklu (Air-Gapped) Askeri Optik İletişim",
         "airgap_desc": "💡 Bu Ne İşe Yarar?\nİnternetin, Wi-Fi'ın ve kabloların tamamen yasak olduğu çok gizli ve izole ortamlarda (Air-Gapped), veriyi AES-256-GCM ile zırhlayıp ekrandaki optik QR kod üzerinden diğer cihazlara aktarır.",
         "tab_airgap_tx": "📤 Şifreli QR Verici (Transmit)",
-        "tab_airgap_rx": "📥 QR Kod Alıcı / Çözücü (Receive)"
+        "tab_airgap_rx": "📥 QR Kod Alıcı / Çözücü (Receive)",
+        "airgap_tx_secret_label": "Aktarılacak Gizli Metin / Seed / Koordinat:",
+        "airgap_tx_pass_label": "AES-256-GCM Şifreleme Parolası (İsteğe Bağlı):",
+        "airgap_tx_pass_ph": "Boş bırakılırsa düz metin QR üretilir...",
+        "airgap_qr_placeholder": "QR Kod Burada Görünecek",
+        "airgap_btn_gen_qr": "⚡ Şifrele & Optik QR Üret",
+        "airgap_btn_save_qr": "💾 QR Kodunu Resim Olarak Kaydet (PNG)",
+        "airgap_btn_load_img": "🖼️ QR Görsel Dosyası Yükle (OpenCV)",
+        "airgap_rx_token_label": "QR Koddan Okunan / Yapıştırılan Token:",
+        "airgap_rx_pass_label": "AES-256-GCM Çözme Parolası:",
+        "airgap_rx_pass_ph": "Şifreli ise parolayı girin...",
+        "airgap_rx_result_label": "Çözülen Orijinal Gizli Veri:",
+        "airgap_btn_decrypt": "🔓 Şifreli QR Verisini Çöz & Doğrula",
+        "airgap_qr_saved": "QR Kod başarıyla kaydedildi:\n{dest}",
+        "airgap_qr_loaded": "Görselden {count} karakterlik veri başarıyla okundu!",
+        "airgap_decrypt_success": "Hava boşluklu veri başarıyla çözüldü ve bütünlüğü doğrulandı!",
+        
+        # BIP-39 Seed Analyzer
+        "bip39_title": "🔍 BIP-39 Tohum Analizi",
+        "bip39_btn_analyze": "TOHUMU ANALİZ ET",
+        "bip39_word_count": "● Kelime Sayısı: {count}",
+        "bip39_valid_len": "● Standart Uyumu: Geçerli Uzunluk (12/15/18/21/24)",
+        "bip39_invalid_len": "● Standart Uyumu: Hatalı Kelime Sayısı",
+        "bip39_valid_fmt": "● Karakter Seti: Doğru Format",
+        "bip39_invalid_fmt": "● Karakter Seti: Hatalı Karakterler",
+        "bip39_entropy": "● Teorik Entropi: {bits} bit",
+        "bip39_result": "● Sonuç: {status}",
+        
+        # Audit Trail & FIPS 140-3
+        "audit_title": "🛡️ FIPS 140-3 Power-On Self-Tests (POST / Açılış Öz-Testleri)",
+        "audit_desc": "Sistem açılışında NIST test vektörleri (KAT) ve donanımsal entropi havuzu otomatik doğrulanmıştır.",
+        "audit_btn_verify": "🔍 Olay Günlüğü Zincirini Doğrula (Hash-Chain Verify)",
+        "audit_btn_zeroize": "⚠️ Acil Durum Kriptografik İmhası (Emergency Zeroize)",
+        "audit_log_title": "📜 Kriptografik Olay Akışı (Tamper-Evident Merkle Trail):",
+        "audit_zeroize_confirm_1": "DİKKAT: '{profile}' profili ve diskteki şifreli dosyalar rastgele baytlarla (DoD 5220.22-M) kalıcı olarak imha edilecektir.\nBu işlem GERİ ALINAMAZ!\n\nDevam edilsin mi?",
+        "audit_zeroize_confirm_2": "Tüm anahtarlar ve veriler tamamen yok edilecek. Emin misiniz?",
+        "audit_zeroize_complete": "Askeri sıfırlama tamamlandı. Uygulama kapatılıyor.",
+        
+        # Cryptography Guide
+        "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu"
     },
     
     "en": {
+        # App Header & Navigation
         "app_title": "AegisVault 3.5 - Military Security & Crypto Suite",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Encrypted Vault",
         "status_active": "● AES-256-GCM | ACTIVE",
         "status_decoy": "● DURESS / DECOY MODE",
+        "fips_badge_passed": "● FIPS 140-3 POST: 100% PASSED",
+        "fips_badge_failed": "● FIPS 140-3 POST: FAILED",
         "nav_vault": "🔑 Secure Vault",
         "nav_portfolio": "📊 Crypto Balances & Prices",
         "nav_p2p_chat": "💬 Live P2P Encrypted Chat",
+        "nav_airgap": "📲 Air-Gapped Optical QR",
         "nav_shamir": "🧩 Shamir (SSS) Backup",
         "nav_bip39": "🔍 BIP-39 Seed Analyzer",
         "nav_audit": "📜 Military Audit Trail (Hash-Chain)",
@@ -120,18 +209,35 @@ TRANSLATIONS = {
         "btn_check_update": "⚡ Check for Updates",
         "inactivity_notice": "⏱️ Auto-locks after 2 min of inactivity.",
         
-        # Dashboard
+        # Dashboard & Vault View
         "search_placeholder": "🔍 Filter by title or category...",
         "total_items": "Saved Items",
         "btn_add_secret": "➕ Add New Secret",
-        "empty_vault_msg": "No saved records found yet.\nClick 'Add New Secret' to store your first Bitcoin seed or password.",
+        "btn_add_file": "📁 Add Encrypted File",
+        "btn_export_file": "💾 Decrypt & Export File",
+        "empty_vault_msg": "No saved records found yet.\nClick 'Add New Secret' or 'Add Encrypted File' to store your data.",
         "btn_show": "👁️ Show",
         "btn_hide": "👁️ Hide",
         "btn_copy": "📋",
         "copied_alert": "Copied to clipboard!",
         "delete_confirm": "Are you sure you want to permanently delete '{title}'?",
+        "vault_file_display": "📄 {fname} ({size:,} Bytes - AES-256-GCM Armored)",
+        "vault_file_dialog_title": "Select File to Encrypt into Vault (PDF, Word, Excel, Image, Key)",
+        "vault_file_oversize_err": "For vault performance, maximum file size is 15 MB!",
+        "vault_file_notes_orig": "Original Path: {path}",
+        "vault_file_added_success": "'{fname}' successfully encrypted with AES-256-GCM and stored in vault!",
+        "vault_file_export_title": "Select Destination to Save Decrypted File",
+        "vault_file_exported_success": "'{fname}' successfully decrypted and saved to disk:\n{dest}",
+        "vault_file_export_err": "Failed to export file: {err}",
         
-        # Profiles
+        # Secret Categories
+        "cat_seed": "Bitcoin / Crypto Seed",
+        "cat_privkey": "Private Key",
+        "cat_pass": "User Password",
+        "cat_note": "Secret Note",
+        "cat_file": "Encrypted File / Document",
+        
+        # Profile & Unlock Screens
         "profile_label": "User Profile:",
         "btn_new_profile": "➕ Create New Profile",
         "profile_name_placeholder": "Username (e.g. Alice, Personal, Finance)...",
@@ -143,19 +249,21 @@ TRANSLATIONS = {
         "duress_pass_placeholder": "Duress Password (Optional - Decoy Vault)...",
         "btn_suggest_pass": "🎲 Suggest Military Password",
         "btn_create_vault": "CREATE AND INITIALIZE VAULT",
+        "btn_back_profiles": "← Back to Existing Profiles",
         "unlock_title": "🔒 Aegis Vault Locked",
         "unlock_desc": "AES-256-GCM encrypted user vault selected.\nEnter your master password to unlock.",
         "unlock_btn": "UNLOCK VAULT",
         
-        # Modal
+        # Secret Modal
         "modal_add_title": "➕ Add New Secure Secret",
         "field_title": "Title (e.g. Ledger Bitcoin Seed)",
         "field_secret": "Secret / Seed / Private Key:",
         "btn_generate_pass": "🎲 Generate 32-Char Military Password (CSPRNG)",
         "field_notes": "Additional Notes (Optional)",
         "btn_save_vault": "SECURELY SAVE TO VAULT",
+        "btn_save": "SAVE",
         
-        # Shamir
+        # Shamir Secret Sharing
         "shamir_title": "🧩 Shamir's Secret Sharing (Threshold Cryptography)",
         "shamir_desc": "💡 How Does This Work?\nSplits your Bitcoin seed into N shares. For example, in a 3-of-5 setup, 5 shares are generated; any 3 shares must be combined to recover the secret. Even if 2 shares are stolen or lost, your funds remain 100% secure.",
         "tab_split": "Split Secret",
@@ -164,6 +272,7 @@ TRANSLATIONS = {
         "label_k": "Required Threshold (K):",
         "btn_do_split": "GENERATE SHARES (SSS SPLIT)",
         "btn_do_combine": "COMBINE SHARES & RECOVER",
+        "shamir_success_msg": "Secret recovered successfully from Shamir shares!",
         
         # Portfolio
         "portfolio_title": "📊 Cold Storage Portfolio & Live Prices",
@@ -172,42 +281,107 @@ TRANSLATIONS = {
         "total_portfolio_val": "Total Portfolio Value",
         "crypto_price_live": "Live Cryptocurrency Prices",
         "btn_refresh_prices": "🔄 Refresh Prices & Balances",
+        "portfolio_empty": "No addresses added yet.",
+        "portfolio_lbl_ph": "Wallet Label (e.g. Ledger Nano BTC)",
+        "portfolio_addr_ph": "Public Address (bc1q... / 0x...)",
+        "portfolio_amt_ph": "Amount (Manual or Fetch Live)",
+        "portfolio_btn_fetch": "📡 Verify Address and Fetch Live Blockchain Balance",
+        "portfolio_refreshed_alert": "Prices and BTC balances successfully updated!",
         
         # Live P2P Chat
         "p2p_chat_title": "💬 Global End-to-End Encrypted Chat (Turkey ↔ Worldwide)",
         "p2p_chat_desc": "💡 How Does This Work?\nConnects computers anywhere across the globe (e.g. Turkey ↔ UK) instantly without port forwarding or IP exposure. Simply agree on a 'Room Name' and 'Room Key'. All messages are armored with AES-256-GCM before transmission; the relay broker only sees ciphertext (AEGIS-MSG-v1:...).",
-        "p2p_tab_host": "Host Room",
-        "p2p_tab_join": "Join Room",
-        "p2p_room_key": "Room Security Passkey:",
-        "btn_host_start": "Start Room (Listen)",
-        "btn_join_start": "Connect to Room",
         "btn_chat_connect": "🟢 Connect to Room (Global)",
         "btn_chat_disconnect": "🔴 Leave Room",
         "chat_nick": "Nickname:",
         "chat_room_name": "Room Name (Channel):",
         "chat_room_key": "Room Key (AES-256):",
         "btn_send": "SEND",
-        "security_info_title": "🛡️ Military Cryptography Guide",
+        "chat_btn_rand_room": "🎲 Generate Random Room",
+        "chat_btn_copy_invite": "📋 Copy Room Invite",
+        "chat_btn_zeroize": "🧹 Zeroize Chat History",
+        "chat_burn_label": "⏱️ 30s Self-Destruct",
+        "chat_btn_file": "📎 Send File",
+        "chat_input_ph": "Type your end-to-end AES-256-GCM encrypted message...",
+        "chat_status_disconnected": "⚪ Status: Disconnected. Enter a room name and key to connect.",
+        "chat_status_connecting": "🟡 Connecting to global relay (Turkey ↔ Worldwide)...",
+        "chat_status_connected": "🟢 Connected to Room: '{room}' | AES-256-GCM Tunnel Active!",
+        "chat_status_left": "🔴 Disconnected from chat room.",
+        "chat_invite_template": "🛡️ AegisVault Secure Military Chat Invite\n━━━━━━━━━━━━━━━━━━━━━\n📡 Room Name: {room}\n🔑 Room Key: {key}\n━━━━━━━━━━━━━━━━━━━━━\n(Enter these credentials in AegisVault and click 'Connect to Room').",
+        "chat_alert_room_ready_title": "Room Ready",
+        "chat_alert_room_ready_msg": "🎲 New Secure Room & Tactical Key Generated!\n\nRoom Name: {room}\nRoom Key: {key}\n\nNow click '📋 Copy Room Invite' to send credentials to your peer.",
+        "chat_alert_invite_copied_title": "Copied",
+        "chat_alert_invite_copied_msg": "Room invite credentials copied to clipboard!\nShare it with your peer to connect to the same room.",
+        "chat_alert_not_connected": "Not connected to any room yet! Please click 'Connect to Room' first.",
+        "chat_file_dialog_title": "Select File to Encrypt & Send (Max 250 KB)",
+        "chat_file_limit_err": "Tactical instant transfer limit is 250 KB!\nSelected file: {size} KB.\n(For larger files, please use the 'Encrypted File Locker' inside the Vault).",
+        "chat_file_sent": "File '{fname}' encrypted with AES-256-GCM and transmitted successfully!",
+        "chat_file_rx_hdr": "{sender} ({ts}) 📎 [ENCRYPTED FILE TRANSFER]",
+        "chat_file_tx_hdr": "You ({ts}) 📎 [ENCRYPTED FILE SENT]",
+        "chat_file_badge": "📄 {fname}  ({size:,} Bytes - AES-256-GCM Armored)",
+        "chat_file_dl_btn": "💾 Decrypt & Download '{fname}'",
+        "chat_file_saved_msg": "File successfully decrypted and saved:\n{dest}",
+        "chat_you": "You",
+        "chat_burn_badge": " ⏱️ [SELF-DESTRUCTING - 30 SEC]",
         
-        # Airgap & File Locker
-        "nav_airgap": "📲 Air-Gapped Optical QR",
-        "btn_add_file": "📁 Add Encrypted File",
-        "btn_export_file": "💾 Decrypt & Export File",
-        "btn_send_file": "📎 Send File",
+        # Airgap Optical QR
         "airgap_title": "📲 Air-Gapped Military Optical Communication",
         "airgap_desc": "💡 How Does This Work?\nIn highly classified and air-gapped facilities where all network cables and Wi-Fi are strictly prohibited, transmits AES-256-GCM encrypted data via optical high-density QR codes.",
         "tab_airgap_tx": "📤 Transmit Encrypted QR",
-        "tab_airgap_rx": "📥 Receive & Decrypt QR"
+        "tab_airgap_rx": "📥 Receive & Decrypt QR",
+        "airgap_tx_secret_label": "Secret Text / Seed / Coordinates to Transmit:",
+        "airgap_tx_pass_label": "AES-256-GCM Encryption Key (Optional):",
+        "airgap_tx_pass_ph": "Leave empty for unencrypted plain QR...",
+        "airgap_qr_placeholder": "QR Code Will Appear Here",
+        "airgap_btn_gen_qr": "⚡ Encrypt & Generate Optical QR",
+        "airgap_btn_save_qr": "💾 Save QR Code as Image (PNG)",
+        "airgap_btn_load_img": "🖼️ Load QR Image File (OpenCV)",
+        "airgap_rx_token_label": "Token Read from QR / Pasted:",
+        "airgap_rx_pass_label": "AES-256-GCM Decryption Key:",
+        "airgap_rx_pass_ph": "Enter password if encrypted...",
+        "airgap_rx_result_label": "Decrypted Original Secret Data:",
+        "airgap_btn_decrypt": "🔓 Decrypt & Verify QR Data",
+        "airgap_qr_saved": "QR Code successfully saved:\n{dest}",
+        "airgap_qr_loaded": "Successfully decoded {count} characters from image!",
+        "airgap_decrypt_success": "Air-gapped data decrypted and integrity verified!",
+        
+        # BIP-39 Seed Analyzer
+        "bip39_title": "🔍 BIP-39 Seed Phrase Analysis",
+        "bip39_btn_analyze": "ANALYZE SEED PHRASE",
+        "bip39_word_count": "● Word Count: {count}",
+        "bip39_valid_len": "● Standard Compliance: Valid Length (12/15/18/21/24)",
+        "bip39_invalid_len": "● Standard Compliance: Invalid Word Count",
+        "bip39_valid_fmt": "● Character Set: Correct Format",
+        "bip39_invalid_fmt": "● Character Set: Invalid Characters",
+        "bip39_entropy": "● Theoretical Entropy: {bits} bits",
+        "bip39_result": "● Result: {status}",
+        
+        # Audit Trail & FIPS 140-3
+        "audit_title": "🛡️ FIPS 140-3 Power-On Self-Tests (POST)",
+        "audit_desc": "NIST KAT vectors and hardware entropy pool are automatically verified at system startup.",
+        "audit_btn_verify": "🔍 Verify Audit Trail (Hash-Chain Integrity)",
+        "audit_btn_zeroize": "⚠️ Emergency Cryptographic Zeroization",
+        "audit_log_title": "📜 Cryptographic Event Stream (Tamper-Evident Merkle Trail):",
+        "audit_zeroize_confirm_1": "WARNING: Profile '{profile}' and all encrypted vault files will be permanently overwritten with random bytes (DoD 5220.22-M).\nThis action CANNOT BE UNDONE!\n\nProceed?",
+        "audit_zeroize_confirm_2": "All keys and data will be permanently destroyed. Are you completely sure?",
+        "audit_zeroize_complete": "Military zeroization complete. Terminating application.",
+        
+        # Cryptography Guide
+        "security_info_title": "🛡️ Military Cryptography Guide"
     },
     
     "ru": {
+        # App Header & Navigation
         "app_title": "AegisVault 3.5 - Военная Безопасность и Криптосистема",
         "tagline": "Шифрованное хранилище AES-256-GCM + scrypt (BIP-38)",
         "status_active": "● AES-256-GCM | АКТИВНО",
         "status_decoy": "● РЕЖИМ ПРИНУЖДЕНИЯ (ЛОЖНЫЙ)",
+        "fips_badge_passed": "● FIPS 140-3 POST: 100% ПРОЙДЕН",
+        "fips_badge_failed": "● FIPS 140-3 POST: СБОЙ",
         "nav_vault": "🔑 Безопасное хранилище",
         "nav_portfolio": "📊 Баланс и Цены Криптовалют",
         "nav_p2p_chat": "💬 Живой P2P Зашифрованный Чат",
+        "nav_airgap": "📲 Оптический QR (Air-Gap)",
         "nav_shamir": "🧩 Разделение Шамира (SSS)",
         "nav_bip39": "🔍 Анализ BIP-39 Seed",
         "nav_audit": "📜 Военный Журнал Аудита (Audit)",
@@ -215,18 +389,35 @@ TRANSLATIONS = {
         "btn_check_update": "⚡ Проверить обновления",
         "inactivity_notice": "⏱️ Автоблокировка через 2 мин бездействия.",
         
-        # Dashboard
+        # Dashboard & Vault View
         "search_placeholder": "🔍 Поиск по названию или категории...",
         "total_items": "Сохраненные записи",
         "btn_add_secret": "➕ Добавить запись",
-        "empty_vault_msg": "Записей пока нет.\nНажмите 'Добавить запись', чтобы сохранить первый Bitcoin seed или пароль.",
+        "btn_add_file": "📁 Зашифровать файл",
+        "btn_export_file": "💾 Расшифровать и выгрузить",
+        "empty_vault_msg": "Записей пока нет.\nНажмите 'Добавить запись' или 'Зашифровать файл', чтобы сохранить данные.",
         "btn_show": "👁️ Показать",
         "btn_hide": "👁️ Скрыть",
         "btn_copy": "📋",
         "copied_alert": "Скопировано в буфер обмена!",
         "delete_confirm": "Вы уверены, что хотите удалить '{title}'?",
+        "vault_file_display": "📄 {fname} ({size:,} байт - Защита AES-256-GCM)",
+        "vault_file_dialog_title": "Выберите файл для шифрования (PDF, Word, Excel, Картинка, Ключ)",
+        "vault_file_oversize_err": "Для быстродействия хранилища максимальный размер файла 15 МБ!",
+        "vault_file_notes_orig": "Исходный путь: {path}",
+        "vault_file_added_success": "Файл '{fname}' успешно зашифрован с AES-256-GCM и сохранен!",
+        "vault_file_export_title": "Выберите место для сохранения расшифрованного файла",
+        "vault_file_exported_success": "Файл '{fname}' успешно расшифрован и сохранен:\n{dest}",
+        "vault_file_export_err": "Ошибка экспорта файла: {err}",
         
-        # Profiles
+        # Secret Categories
+        "cat_seed": "Bitcoin / Крипто Seed",
+        "cat_privkey": "Приватный ключ",
+        "cat_pass": "Пароль пользователя",
+        "cat_note": "Секретная заметка",
+        "cat_file": "Зашифрованный файл / Документ",
+        
+        # Profile & Unlock Screens
         "profile_label": "Профиль пользователя:",
         "btn_new_profile": "➕ Создать новый профиль",
         "profile_name_placeholder": "Имя пользователя (напр. Иван, Личный)...",
@@ -238,19 +429,21 @@ TRANSLATIONS = {
         "duress_pass_placeholder": "Пароль принуждения (Ложное хранилище)...",
         "btn_suggest_pass": "🎲 Сгенерировать военный пароль",
         "btn_create_vault": "СОЗДАТЬ ХРАНИЛИЩЕ",
+        "btn_back_profiles": "← К существующим профилям",
         "unlock_title": "🔒 Aegis Vault Заблокирован",
         "unlock_desc": "Выбран зашифрованный профиль.\nВведите пароль для разблокировки.",
         "unlock_btn": "РАЗБЛОКИРОВАТЬ",
         
-        # Modal
+        # Secret Modal
         "modal_add_title": "➕ Добавить новую запись",
         "field_title": "Название (напр. Ledger Bitcoin Seed)",
         "field_secret": "Секрет / Сид-фраза / Пароль:",
         "btn_generate_pass": "🎲 Сгенерировать 32-значный пароль (CSPRNG)",
         "field_notes": "Заметки (необязательно)",
         "btn_save_vault": "НАДЕЖНО СОХРАНИТЬ",
+        "btn_save": "СОХРАНИТЬ",
         
-        # Shamir
+        # Shamir Secret Sharing
         "shamir_title": "🧩 Разделение секрета Шамира (SSS)",
         "shamir_desc": "💡 Как это работает?\nМатематически разделяет сид-фразу на N частей. Например, при схеме 3 из 5 для восстановления нужны любые 3 части. Даже при потере 2 частей данные в полной безопасности.",
         "tab_split": "Разделить (Split)",
@@ -259,6 +452,7 @@ TRANSLATIONS = {
         "label_k": "Порог восстановления (K):",
         "btn_do_split": "СОЗДАТЬ ЧАСТИ (SSS SPLIT)",
         "btn_do_combine": "СОБРАТЬ И ВОССТАНОВИТЬ",
+        "shamir_success_msg": "Секретные данные успешно восстановлены из долей Шамира!",
         
         # Portfolio
         "portfolio_title": "📊 Холодный Кошелек и Цены",
@@ -267,32 +461,93 @@ TRANSLATIONS = {
         "total_portfolio_val": "Общая стоимость портфеля",
         "crypto_price_live": "Актуальные курсы криптовалют",
         "btn_refresh_prices": "🔄 Обновить цены и балансы",
+        "portfolio_empty": "Адреса пока не добавлены.",
+        "portfolio_lbl_ph": "Метка кошелька (напр. Ledger Nano BTC)",
+        "portfolio_addr_ph": "Публичный адрес (bc1q... / 0x...)",
+        "portfolio_amt_ph": "Количество (вручную или онлайн)",
+        "portfolio_btn_fetch": "📡 Проверить адрес и получить баланс из блокчейна",
+        "portfolio_refreshed_alert": "Курсы и балансы BTC успешно обновлены!",
         
-        # P2P Chat
+        # Live P2P Chat
         "p2p_chat_title": "💬 Глобальный зашифрованный чат (Турция ↔ Весь мир)",
         "p2p_chat_desc": "💡 Как это работает?\nМгновенно связывает участников по всему миру (напр. Турция ↔ Великобритания) без проброса портов и IP. Достаточно указать общее 'Имя комнаты' и 'Пароль комнаты'. Все сообщения шифруются AES-256-GCM; релей видит только шифротекст (AEGIS-MSG-v1:...).",
-        "p2p_tab_host": "Создать комнату (Host)",
-        "p2p_tab_join": "Присоединиться (Join)",
-        "p2p_room_key": "Пароль комнаты:",
-        "btn_host_start": "Запустить комнату (Слушать)",
-        "btn_join_start": "Подключиться к комнате",
         "btn_chat_connect": "🟢 Войти в комнату (Глобально)",
         "btn_chat_disconnect": "🔴 Выйти из комнаты",
         "chat_nick": "Ваш ник:",
         "chat_room_name": "Имя комнаты (Канал):",
         "chat_room_key": "Пароль (AES-256):",
         "btn_send": "ОТПРАВИТЬ",
-        "security_info_title": "🛡️ Справочник по криптографии",
+        "chat_btn_rand_room": "🎲 Сгенерировать комнату",
+        "chat_btn_copy_invite": "📋 Скопировать приглашение",
+        "chat_btn_zeroize": "🧹 Очистить историю чата",
+        "chat_burn_label": "⏱️ Самоуничтожение 30с",
+        "chat_btn_file": "📎 Отправить файл",
+        "chat_input_ph": "Введите сообщение с шифрованием AES-256-GCM...",
+        "chat_status_disconnected": "⚪ Статус: Отключено. Введите имя комнаты и пароль.",
+        "chat_status_connecting": "🟡 Подключение к глобальной сети (Турция ↔ Весь мир)...",
+        "chat_status_connected": "🟢 Подключено к комнате: '{room}' | Шифрование AES-256-GCM активно!",
+        "chat_status_left": "🔴 Вы вышли из комнаты чата.",
+        "chat_invite_template": "🛡️ AegisVault Военное Безопасное Приглашение\n━━━━━━━━━━━━━━━━━━━━━\n📡 Имя комнаты: {room}\n🔑 Пароль комнаты: {key}\n━━━━━━━━━━━━━━━━━━━━━\n(Введите эти данные в AegisVault и нажмите 'Войти в комнату').",
+        "chat_alert_room_ready_title": "Комната готова",
+        "chat_alert_room_ready_msg": "🎲 Создана защищенная комната и военный ключ!\n\nИмя комнаты: {room}\nПароль комнаты: {key}\n\nНажмите '📋 Скопировать приглашение', чтобы отправить собеседнику.",
+        "chat_alert_invite_copied_title": "Скопировано",
+        "chat_alert_invite_copied_msg": "Данные комнаты скопированы в буфер обмена!\nПередайте их собеседнику для подключения.",
+        "chat_alert_not_connected": "Вы еще не подключены к комнате! Сначала нажмите 'Войти в комнату'.",
+        "chat_file_dialog_title": "Выберите файл для шифрования и отправки (макс. 250 КБ)",
+        "chat_file_limit_err": "Лимит мгновенной отправки 250 КБ!\nВыбранный файл: {size} КБ.\n(Для больших файлов используйте 'Зашифровать файл' в хранилище).",
+        "chat_file_sent": "Файл '{fname}' защищен AES-256-GCM и успешно передан!",
+        "chat_file_rx_hdr": "{sender} ({ts}) 📎 [ЗАШИФРОВАННЫЙ ФАЙЛ]",
+        "chat_file_tx_hdr": "Вы ({ts}) 📎 [ФАЙЛ ОТПРАВЛЕН]",
+        "chat_file_badge": "📄 {fname}  ({size:,} байт - Защита AES-256-GCM)",
+        "chat_file_dl_btn": "💾 Расшифровать и скачать '{fname}'",
+        "chat_file_saved_msg": "Файл успешно расшифрован и сохранен:\n{dest}",
+        "chat_you": "Вы",
+        "chat_burn_badge": " ⏱️ [САМОУНИЧТОЖЕНИЕ - 30 СЕК]",
         
-        # Airgap & File Locker
-        "nav_airgap": "📲 Оптический QR (Air-Gap)",
-        "btn_add_file": "📁 Зашифровать файл в хранилище",
-        "btn_export_file": "💾 Расшифровать и выгрузить",
-        "btn_send_file": "📎 Отправить файл",
+        # Airgap Optical QR
         "airgap_title": "📲 Оптическая связь с воздушным зазором (Air-Gap)",
         "airgap_desc": "💡 Как это работает?\nВ изолированных военных помещениях без интернета и Wi-Fi передает зашифрованные данные AES-256-GCM через оптические QR-коды на экране.",
         "tab_airgap_tx": "📤 Передать QR",
-        "tab_airgap_rx": "📥 Принять и расшифровать QR"
+        "tab_airgap_rx": "📥 Принять и расшифровать QR",
+        "airgap_tx_secret_label": "Секретный текст / Сид / Координаты для передачи:",
+        "airgap_tx_pass_label": "Пароль шифрования AES-256-GCM (необязательно):",
+        "airgap_tx_pass_ph": "Оставьте пустым для открытого QR...",
+        "airgap_qr_placeholder": "Здесь появится QR-код",
+        "airgap_btn_gen_qr": "⚡ Зашифровать и создать QR",
+        "airgap_btn_save_qr": "💾 Сохранить QR-код как PNG",
+        "airgap_btn_load_img": "🖼️ Загрузить файл QR (OpenCV)",
+        "airgap_rx_token_label": "Токен из QR / Вставленный токен:",
+        "airgap_rx_pass_label": "Пароль расшифровки AES-256-GCM:",
+        "airgap_rx_pass_ph": "Введите пароль если зашифровано...",
+        "airgap_rx_result_label": "Расшифрованные секретные данные:",
+        "airgap_btn_decrypt": "🔓 Расшифровать и проверить QR",
+        "airgap_qr_saved": "QR-код успешно сохранен:\n{dest}",
+        "airgap_qr_loaded": "Из изображения успешно считано {count} символов!",
+        "airgap_decrypt_success": "Данные успешно расшифрованы, целостность подтверждена!",
+        
+        # BIP-39 Seed Analyzer
+        "bip39_title": "🔍 Анализ BIP-39 Seed",
+        "bip39_btn_analyze": "АНАЛИЗИРОВАТЬ СИД-ФРАЗУ",
+        "bip39_word_count": "● Количество слов: {count}",
+        "bip39_valid_len": "● Стандарт: Корректная длина (12/15/18/21/24)",
+        "bip39_invalid_len": "● Стандарт: Неверное количество слов",
+        "bip39_valid_fmt": "● Набор символов: Корректный формат",
+        "bip39_invalid_fmt": "● Набор символов: Недопустимые символы",
+        "bip39_entropy": "● Теоретическая энтропия: {bits} бит",
+        "bip39_result": "● Результат: {status}",
+        
+        # Audit Trail & FIPS 140-3
+        "audit_title": "🛡️ FIPS 140-3 Power-On Self-Tests (POST)",
+        "audit_desc": "При запуске системы тесты NIST KAT и пул аппаратной энтропии проверены автоматически.",
+        "audit_btn_verify": "🔍 Проверить журнал аудита (Hash-Chain Integrity)",
+        "audit_btn_zeroize": "⚠️ Экстренное уничтожение данных (Emergency Zeroize)",
+        "audit_log_title": "📜 Криптографический поток событий (Tamper-Evident Merkle Trail):",
+        "audit_zeroize_confirm_1": "ВНИМАНИЕ: Профиль '{profile}' и зашифрованные файлы будут безвозвратно перезаписаны случайными байтами (DoD 5220.22-M).\nЭто действие НЕОБРАТИМО!\n\nПродолжить?",
+        "audit_zeroize_confirm_2": "Все ключи и данные будут полностью уничтожены. Вы абсолютно уверены?",
+        "audit_zeroize_complete": "Военное уничтожение завершено. Приложение закрывается.",
+        
+        # Cryptography Guide
+        "security_info_title": "🛡️ Справочник по криптографии"
     }
 }
 
@@ -300,8 +555,9 @@ CURRENT_LANG = "tr"
 
 
 def get_text(key: str, **kwargs) -> str:
+    """Retrieve localized text for key with fallback to English then key itself."""
     lang_dict = TRANSLATIONS.get(CURRENT_LANG, TRANSLATIONS["tr"])
-    template = lang_dict.get(key, TRANSLATIONS["en"].get(key, key))
+    template = lang_dict.get(key, TRANSLATIONS.get("en", {}).get(key, key))
     if kwargs:
         try:
             return template.format(**kwargs)
@@ -311,6 +567,7 @@ def get_text(key: str, **kwargs) -> str:
 
 
 def set_language(lang_code: str):
+    """Set the active application language code."""
     global CURRENT_LANG
     if lang_code in TRANSLATIONS:
         CURRENT_LANG = lang_code

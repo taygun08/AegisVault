@@ -1,6 +1,6 @@
 """
 AegisVault GitHub Auto-Updater
-GitHub Releases API üzerinden en güncel sürümü denetler ve otomatik güncelleme indirir.
+Queries GitHub Releases API to detect new releases and download updates.
 """
 
 import json
@@ -11,13 +11,13 @@ import subprocess
 from typing import Tuple, Optional, Dict, Any
 
 CURRENT_VERSION = "3.5.0"
-# Kullanıcı kendi GitHub reposunu buraya veya ayarlardan tanımlayabilir
+# Default GitHub repository slug
 DEFAULT_REPO = "yiitpepek/AegisVault"
 
 
 def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, str, str]:
     """
-    GitHub Releases API'sini sorgulayarak yeni sürüm olup olmadığını kontrol eder.
+    Check GitHub Releases API for a newer application version.
     
     Returns:
         (has_update: bool, latest_version: str, download_url: str, release_notes: str)
@@ -32,7 +32,7 @@ def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, s
             if resp.status == 200:
                 data = json.loads(resp.read().decode())
                 tag_name = data.get("tag_name", "").lstrip("v")
-                body = data.get("body", "Yeni özellikler ve güvenlik yamaları.")
+                body = data.get("body", "New features and security patches.")
                 
                 download_url = ""
                 for asset in data.get("assets", []):
@@ -43,20 +43,20 @@ def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, s
 
                 if tag_name and tag_name > CURRENT_VERSION and download_url:
                     return True, tag_name, download_url, body
-                return False, tag_name or CURRENT_VERSION, "", "Zaten en güncel sürümü kullanıyorsunuz."
+                return False, tag_name or CURRENT_VERSION, "", "You are running the latest version."
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            return False, CURRENT_VERSION, "", "GitHub'da henüz bir 'Release' paketi yayınlanmadı veya depo 'Private' durumdadır. Deponuz Public olduğunda veya ilk Release eklendiğinde buradan tek tıkla otomatik güncellenecektir."
-        return False, CURRENT_VERSION, "", f"GitHub bağlantı hatası (HTTP {e.code}): {e.reason}"
+            return False, CURRENT_VERSION, "", "No public GitHub Release found yet or repository is private."
+        return False, CURRENT_VERSION, "", f"GitHub connection error (HTTP {e.code}): {e.reason}"
     except Exception as e:
-        return False, CURRENT_VERSION, "", f"GitHub kontrolü yapılamadı (Çevrimdışı veya ağ hatası): {e}"
+        return False, CURRENT_VERSION, "", f"Unable to check GitHub updates (offline or network error): {e}"
 
-    return False, CURRENT_VERSION, "", "Güncelleme bulunamadı."
+    return False, CURRENT_VERSION, "", "No updates found."
 
 
 def apply_executable_update(download_url: str) -> bool:
     """
-    Yeni AegisVault.exe dosyasını indirir ve mevcut çalışan uygulamanın yerine yazar.
+    Download the updated AegisVault.exe and replace the currently running binary.
     """
     try:
         temp_exe = "AegisVault_update.exe"
@@ -64,7 +64,7 @@ def apply_executable_update(download_url: str) -> bool:
         with urllib.request.urlopen(req, timeout=15.0) as resp, open(temp_exe, "wb") as f:
             f.write(resp.read())
 
-        # Windows'ta çalışan dosya doğrudan üzerine yazılamayacağından küçük bir batch betiği çalıştırılır
+        # On Windows, replace the active executable using a background launcher script
         batch_script = """@echo off
 timeout /t 2 /nobreak > nul
 move /y AegisVault_update.exe AegisVault.exe
@@ -76,5 +76,5 @@ del "%~f0"
 
         subprocess.Popen(["cmd.exe", "/c", "update_installer.bat"], creationflags=subprocess.CREATE_NO_WINDOW)
         sys.exit(0)
-    except Exception as e:
+    except Exception:
         return False

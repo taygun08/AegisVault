@@ -1,10 +1,10 @@
 """
 Military Security, FIPS 140-3 Self-Tests & Hash-Chained Audit Trail
-Standartlar:
+Standards:
 - FIPS 140-3 Section 9: Power-On Self-Tests (POST) & Known-Answer Tests (KAT)
-- NIST SP 800-38D AES-GCM KAT Vektörleri
-- Kriptografik Olay Günlüğü (Tamper-Evident Hash Chain / Merkle Trail)
-- Acil Durum Sıfırlama (Emergency Zeroization / Sanitization)
+- NIST SP 800-38D AES-GCM KAT Vectors
+- Cryptographic Audit Trail (Tamper-Evident Hash Chain / Merkle Trail)
+- Emergency Zeroization / Sanitization (DoD 5220.22-M Compliance)
 """
 
 import os
@@ -20,12 +20,12 @@ AUDIT_LOG_FILE = "audit_trail.json"
 
 
 # =============================================================================
-# 1. FIPS 140-3 AÇILIŞ ÖZ-TESTLERİ (POWER-ON SELF-TESTS - POST)
+# 1. FIPS 140-3 POWER-ON SELF-TESTS (POST)
 # =============================================================================
 def run_power_on_self_tests() -> Dict[str, Any]:
     """
-    Askeri FIPS 140-3 standardı gereği sistem açılışında kriptografik çekirdeğin
-    doğruluğunu bilinen test vektörleriyle (KAT) denetler.
+    Executes FIPS 140-3 Power-On Self-Tests verifying the cryptographic core
+    against NIST Known-Answer Test (KAT) vectors.
     """
     results = []
     all_passed = True
@@ -45,7 +45,7 @@ def run_power_on_self_tests() -> Dict[str, Any]:
         results.append({
             "name": "NIST AES-256-GCM Known-Answer Test (KAT)",
             "passed": aes_passed,
-            "details": "Şifreleme & Doğrulama Etiketi (128-bit GHASH) NIST vektörüyle %100 eşleşti."
+            "details": "Ciphertext & 128-bit GHASH authentication tag 100% matched NIST vector."
         })
         if not aes_passed:
             all_passed = False
@@ -53,7 +53,7 @@ def run_power_on_self_tests() -> Dict[str, Any]:
         results.append({"name": "AES-256-GCM KAT", "passed": False, "details": str(e)})
         all_passed = False
 
-    # Test 2: scrypt Bellek-Zorlamalı KDF Bütünlük Testi
+    # Test 2: scrypt Memory-Hard KDF Deterministic Integrity Test
     try:
         kdf = Scrypt(salt=b"test_salt_16byte", length=32, n=1024, r=8, p=1)
         key1 = kdf.derive(b"test_password")
@@ -62,9 +62,9 @@ def run_power_on_self_tests() -> Dict[str, Any]:
 
         scrypt_passed = (key1 == key2) and (len(key1) == 32)
         results.append({
-            "name": "scrypt KDF Deterministik Doğrulama",
+            "name": "scrypt KDF Deterministic Verification",
             "passed": scrypt_passed,
-            "details": "256-bit anahtar türetiminde bellek matrisi tutarlı çalışıyor."
+            "details": "256-bit key derivation memory matrix operates deterministically."
         })
         if not scrypt_passed:
             all_passed = False
@@ -72,16 +72,15 @@ def run_power_on_self_tests() -> Dict[str, Any]:
         results.append({"name": "scrypt KDF KAT", "passed": False, "details": str(e)})
         all_passed = False
 
-    # Test 3: CSPRNG Entropi ve Rastgelelik Süreklilik Testi
+    # Test 3: CSPRNG Entropy & Randomness Health Test
     try:
         sample1 = os.urandom(32)
         sample2 = os.urandom(32)
-        # Asla birbirine eşit olmamalı ve bit dağılımı sıfır olmamalı
         csprng_passed = (sample1 != sample2) and (len(set(sample1)) > 10)
         results.append({
-            "name": "CSPRNG Donanımsal Entropi Sağlık Testi",
+            "name": "CSPRNG Hardware Entropy Health Check",
             "passed": csprng_passed,
-            "details": "İşletim sistemi entropi havuzu aktif ve sürekli rastgele bayt üretiyor."
+            "details": "OS hardware entropy pool active and continuously yielding non-zero entropy."
         })
         if not csprng_passed:
             all_passed = False
@@ -97,12 +96,12 @@ def run_power_on_self_tests() -> Dict[str, Any]:
 
 
 # =============================================================================
-# 2. KRİPTOGRAFİK OLAY GÜNLÜĞÜ (HASH-CHAINED TAMPER-EVIDENT AUDIT TRAIL)
+# 2. CRYPTOGRAPHIC AUDIT TRAIL (HASH-CHAINED TAMPER-EVIDENT MERKLE TRAIL)
 # =============================================================================
 class CryptographicAuditTrail:
     """
-    Her olayı bir önceki olayın SHA-256 hash'ine bağlayarak (Blockchain mantığı)
-    değiştirilemez, kurcalanamaz bir askeri olay günlüğü tutar.
+    Maintains a tamper-evident audit trail by chaining each event block
+    to the SHA-256 hash of its predecessor.
     """
 
     GENESIS_HASH = "0000000000000000000000000000000000000000000000000000000000000000"
@@ -128,13 +127,12 @@ class CryptographicAuditTrail:
 
     @classmethod
     def record_event(cls, event_type: str, actor: str, details: str, severity: str = "INFO"):
-        """Zincire yeni bir kriptografik olay bloğu ekler."""
+        """Appends a new cryptographically signed block to the audit trail."""
         chain = cls._read_chain()
         prev_hash = chain[-1]["hash"] if chain else cls.GENESIS_HASH
         idx = len(chain)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Blok Özeti: SHA256(Index + Timestamp + EventType + Actor + Details + PrevHash)
         raw_to_hash = f"{idx}|{timestamp}|{event_type}|{actor}|{details}|{severity}|{prev_hash}"
         block_hash = hashlib.sha256(raw_to_hash.encode("utf-8")).hexdigest()
 
@@ -155,27 +153,27 @@ class CryptographicAuditTrail:
     @classmethod
     def verify_integrity(cls) -> Tuple[bool, str, int]:
         """
-        Olay günlüğü zincirini baştan sona yeniden hesaplar.
-        Herhangi bir harf veya kayıt değiştirilmişse saldırıyı anında yakalar.
+        Recalculates the cryptographic audit hash-chain from genesis to tip.
+        Detects any retroactive modification or record deletion.
         """
         chain = cls._read_chain()
         if not chain:
-            return True, "Günlük zinciri boş.", 0
+            return True, "Audit log is empty.", 0
 
         prev_hash = cls.GENESIS_HASH
         for i, block in enumerate(chain):
             if block["prev_hash"] != prev_hash:
-                return False, f"Zincir kopukluğu tespit edildi! Blok #{i} önceki hash ile eşleşmiyor.", i
+                return False, f"Broken chain link detected! Block #{i} does not match previous hash.", i
 
             raw = f"{block['index']}|{block['timestamp']}|{block['event_type']}|{block['actor']}|{block['details']}|{block['severity']}|{block['prev_hash']}"
             expected = hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
             if block["hash"] != expected:
-                return False, f"Blok #{i} içeriği manipüle edilmiş! (Kurcalama tespit edildi).", i
+                return False, f"Block #{i} has been tampered with! Hash mismatch.", i
 
             prev_hash = block["hash"]
 
-        return True, f"Tüm olay günlüğü doğrulanmıştır ({len(chain)} blok zincir bütünlüğü kusursuz).", len(chain)
+        return True, f"Audit trail verified: {len(chain)} blocks intact with valid hash chain.", len(chain)
 
     @classmethod
     def get_recent_events(cls, limit: int = 50) -> List[Dict[str, Any]]:
@@ -184,12 +182,12 @@ class CryptographicAuditTrail:
 
 
 # =============================================================================
-# 3. ASKERİ ACİL DURUM KRİPTOGRAFİK İMHA (EMERGENCY ZEROIZE)
+# 3. EMERGENCY CRYPTOGRAPHIC ZEROIZATION (DoD 5220.22-M)
 # =============================================================================
-def emergency_zeroize_vault(profile_name: str = "Varsayılan") -> bool:
+def emergency_zeroize_vault(profile_name: str = "Varsayilan") -> bool:
     """
-    Cihaz düşman eline geçme riski taşıdığında, diskteki şifreli dosyaları
-    ve bellek bloklarını DoD 5220.22-M usulü rastgele baytlarla üzerine yazıp imha eder.
+    Overwrites vault files and key sectors with CSPRNG random bytes followed by
+    zero bytes according to DoD 5220.22-M sanitization standards.
     """
     target_files = [
         "vault_data.mvat",
@@ -203,10 +201,10 @@ def emergency_zeroize_vault(profile_name: str = "Varsayılan") -> bool:
             try:
                 size = os.path.getsize(path)
                 with open(path, "wb") as f:
-                    f.write(os.urandom(size))  # 1. Geçiş: Rastgele baytlar
+                    f.write(os.urandom(size))  # Pass 1: Random bytes
                     f.flush()
                     f.seek(0)
-                    f.write(b"\x00" * size)    # 2. Geçiş: Sıfırlar
+                    f.write(b"\x00" * size)    # Pass 2: Zero bytes
                     f.flush()
                 os.remove(path)
             except Exception:
@@ -215,7 +213,7 @@ def emergency_zeroize_vault(profile_name: str = "Varsayılan") -> bool:
     CryptographicAuditTrail.record_event(
         "EMERGENCY_ZEROIZE",
         profile_name,
-        "Askeri imha protokolü tetiklendi. Kasa dosyaları güvenle silindi.",
+        "Emergency cryptographic zeroization triggered. Vault files shredded.",
         "CRITICAL"
     )
     return True

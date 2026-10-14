@@ -1,9 +1,9 @@
 """
 Air-Gapped QR Optical Communication Module
-Askeri Seviye Hava Boşluklu (Air-Gapped) Optik İletişim:
-- Ağ bağlantısı (İnternet, Wi-Fi, Bluetooth) olmayan izole ortamlarda güvenli veri aktarımı
-- Veriyi AES-256-GCM ile zırhlayıp dinamik / yüksek yoğunluklu QR koda dönüştürür
-- Görüntü işleme (OpenCV) ile QR kodları çözüp kriptografik doğrulamayı yapar
+Military-Grade Air-Gapped Optical Communication:
+- Secure data exchange across physically isolated systems without Wi-Fi, Ethernet, or Bluetooth.
+- Armors payload using AES-256-GCM before rendering into high-density optical QR codes.
+- Decodes QR frames via OpenCV computer vision and verifies cryptographic integrity.
 """
 
 import os
@@ -17,14 +17,14 @@ from military_vault import VaultSecurityError
 
 def generate_airgap_qr(plaintext: str, passkey: Optional[str] = None) -> Tuple[Image.Image, str]:
     """
-    Düz metni (koordinat, tohum, anahtar) isteğe bağlı AES-256-GCM ile şifreler
-    ve yüksek yoğunluklu QR kod PIL görüntüsüne dönüştürür.
+    Encrypts plaintext (coordinates, seed phrases, private keys) with optional AES-256-GCM
+    and transforms the ciphertext into a high-density QR code PIL image.
     
     Returns:
         (PIL.Image, token_str)
     """
     if not plaintext.strip():
-        raise ValueError("Aktarılacak veri boş olamaz.")
+        raise ValueError("Data payload cannot be empty.")
 
     if passkey and passkey.strip():
         token = crypto_chat.encrypt_message(plaintext.strip(), passkey.strip())
@@ -45,37 +45,37 @@ def generate_airgap_qr(plaintext: str, passkey: Optional[str] = None) -> Tuple[I
 
 def decode_airgap_image(image_path: str) -> str:
     """
-    Yüklenen QR kod görselini OpenCV ile okur ve içeriğindeki metni/token'ı döner.
+    Decodes an image containing a QR code using OpenCV and returns the raw decoded token.
     """
     if not os.path.exists(image_path):
-        raise FileNotFoundError(f"Görsel bulunamadı: {image_path}")
+        raise FileNotFoundError(f"Image not found: {image_path}")
 
     cv_img = cv2.imread(image_path)
     if cv_img is None:
-        raise ValueError("Görsel dosyası okunamadı veya bozuk format.")
+        raise ValueError("Could not read image file or unsupported format.")
 
     detector = cv2.QRCodeDetector()
     val, pts, _ = detector.detectAndDecode(cv_img)
     if not val:
-        # Görseli griye çevirip tekrar dene (robust fallback)
+        # Fallback to grayscale for higher contrast detection
         gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
         val, pts, _ = detector.detectAndDecode(gray)
 
     if not val:
-        raise ValueError("Görsel içerisinde geçerli bir QR kod tespit edilemedi.")
+        raise ValueError("No valid optical QR code detected in the image.")
 
     return val.strip()
 
 
 def decrypt_airgap_token(token: str, passkey: Optional[str] = None) -> str:
     """
-    QR koddan okunan token şifreli ise (AEGIS-MSG-v1) verilen parola ile çözer.
-    Şifresiz ise doğrudan metni döner.
+    Decrypts an encrypted QR token (AEGIS-MSG-v1) using the shared passkey.
+    Returns plain text directly if unencrypted.
     """
     token = token.strip()
     if token.startswith("AEGIS-MSG-v1:"):
         if not passkey or not passkey.strip():
-            raise VaultSecurityError("Bu QR kod AES-256-GCM ile zırhlanmıştır! Çözmek için lütfen parolayı girin.")
+            raise VaultSecurityError("This QR code is AES-256-GCM armored! Please enter the decryption passkey.")
         payload = crypto_chat.decrypt_message(token, passkey.strip())
         return payload.get("text", "")
     return token
