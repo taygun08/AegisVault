@@ -992,23 +992,23 @@ class AegisVaultApp(ctk.CTk):
         top_conn = ctk.CTkFrame(chat_layout, fg_color="#0f172a", corner_radius=10)
         top_conn.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
-        self.p2p_status_lbl = ctk.CTkLabel(top_conn, text="⚪ Durum: Bağlantı yok.", font=ctk.CTkFont(size=12, weight="bold"), text_color="#94a3b8")
+        self.p2p_status_lbl = ctk.CTkLabel(top_conn, text="⚪ Durum: Bağlantı yok. Bir oda adı ve şifresi girip bağlanın.", font=ctk.CTkFont(size=12, weight="bold"), text_color="#94a3b8")
         self.p2p_status_lbl.pack(padx=15, pady=(10, 4), anchor="w")
 
         ctrl_box = ctk.CTkFrame(top_conn, fg_color="transparent")
         ctrl_box.pack(fill="x", padx=15, pady=(0, 10))
 
-        nick_in = ctk.CTkEntry(ctrl_box, placeholder_text="Rumuzunuz...", width=140, height=32)
+        nick_in = ctk.CTkEntry(ctrl_box, placeholder_text=get_text("chat_nick"), width=120, height=32)
         nick_in.insert(0, self.selected_profile)
-        nick_in.pack(side="left", padx=4)
+        nick_in.pack(side="left", padx=3)
 
-        room_key_in = ctk.CTkEntry(ctrl_box, placeholder_text="Oda Şifresi...", show="*", width=160, height=32)
+        room_in = ctk.CTkEntry(ctrl_box, placeholder_text=get_text("chat_room_name"), width=160, height=32)
+        room_in.insert(0, "som-tim-01")
+        room_in.pack(side="left", padx=3)
+
+        room_key_in = ctk.CTkEntry(ctrl_box, placeholder_text=get_text("chat_room_key"), show="*", width=160, height=32)
         room_key_in.insert(0, "AegisRoom2026!")
-        room_key_in.pack(side="left", padx=4)
-
-        ip_in = ctk.CTkEntry(ctrl_box, placeholder_text="Host IP:Port (Katılmak için)...", width=190, height=32)
-        ip_in.insert(0, f"{live_p2p_chat.get_local_ip()}:9876")
-        ip_in.pack(side="left", padx=4)
+        room_key_in.pack(side="left", padx=3)
 
         def update_status(text):
             self.after(0, lambda: self.p2p_status_lbl.configure(text=text))
@@ -1022,30 +1022,27 @@ class AegisVaultApp(ctk.CTk):
                 ctk.CTkLabel(bubble, text=text, font=ctk.CTkFont(size=13), text_color="#ffffff", justify="left").pack(anchor="w", padx=10, pady=(2, 6))
             self.after(0, add_bubble)
 
-        def do_host():
-            if self.p2p_session:
+        def toggle_connect():
+            if self.p2p_session and self.p2p_session.is_connected:
                 self.p2p_session.close()
-            nick = nick_in.get().strip() or "Host"
-            key = room_key_in.get().strip()
-            self.p2p_session = live_p2p_chat.P2PChatSession(nick, key, on_msg_received, update_status)
-            self.p2p_session.start_host(port=9876)
+                self.p2p_session = None
+                conn_btn.configure(text=get_text("btn_chat_connect"), fg_color="#059669", hover_color="#047857")
+                self.p2p_status_lbl.configure(text="⚪ Durum: Bağlantı kesildi.", text_color="#94a3b8")
+            else:
+                nick = nick_in.get().strip() or "Anonim"
+                room = room_in.get().strip() or "genel-oda"
+                key = room_key_in.get().strip()
+                if not key:
+                    messagebox.showerror("Error", "Lütfen bir oda şifresi girin!")
+                    return
+                if self.p2p_session:
+                    self.p2p_session.close()
+                self.p2p_session = live_p2p_chat.GlobalEncryptedChatSession(nick, room, key, on_msg_received, update_status)
+                self.p2p_session.connect()
+                conn_btn.configure(text=get_text("btn_chat_disconnect"), fg_color="#dc2626", hover_color="#b91c1c")
 
-        def do_join():
-            if self.p2p_session:
-                self.p2p_session.close()
-            nick = nick_in.get().strip() or "Guest"
-            key = room_key_in.get().strip()
-            target = ip_in.get().strip()
-            host = target.split(":")[0]
-            port = int(target.split(":")[1]) if ":" in target else 9876
-            self.p2p_session = live_p2p_chat.P2PChatSession(nick, key, on_msg_received, update_status)
-            self.p2p_session.connect_to_host(host, port)
-
-        host_btn = ctk.CTkButton(ctrl_box, text=get_text("btn_host_start"), fg_color="#0284c7", width=120, height=32, command=do_host)
-        host_btn.pack(side="left", padx=4)
-
-        join_btn = ctk.CTkButton(ctrl_box, text=get_text("btn_join_start"), fg_color="#059669", width=120, height=32, command=do_join)
-        join_btn.pack(side="left", padx=4)
+        conn_btn = ctk.CTkButton(ctrl_box, text=get_text("btn_chat_connect"), fg_color="#059669", hover_color="#047857", width=180, height=32, command=toggle_connect)
+        conn_btn.pack(side="left", padx=6)
 
         # Mesaj Akışı Kutusu
         self.p2p_messages_box = ctk.CTkScrollableFrame(chat_layout, fg_color="#0b1120", corner_radius=10)
@@ -1063,8 +1060,8 @@ class AegisVaultApp(ctk.CTk):
             txt = msg_input.get().strip()
             if not txt:
                 return
-            if not self.p2p_session or not self.p2p_session.conn:
-                messagebox.showwarning("Not Connected", "Henüz bir odaya bağlı değilsiniz!")
+            if not self.p2p_session or not self.p2p_session.is_connected:
+                messagebox.showwarning("Not Connected", "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.")
                 return
             if self.p2p_session.send_message(txt):
                 msg_input.delete(0, "end")

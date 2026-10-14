@@ -1,145 +1,120 @@
 """
-Live P2P Encrypted Chat Network (Doğrudan İki Bilgisayar Arası Şifreli Sohbet)
+Global Encrypted Chat Network (Dünya Çapı İnternet & P2P Sohbet Ağı)
 Özellikler:
-- P2P Socket Sunucu / İstemci (Sunucusuz, Doğrudan Bağlantı)
-- Her mesaj paketi AES-256-GCM ile zırhlanır
-- Otomatik Yerel IP Tespiti
-- Karşılıklı Gerçek Zamanlı Mesajlaşma (Telegram / Signal Tarzı)
+- Türkiye'den İngiltere'ye, dünyanın her yerinden doğrudan bağlantı (NAT / Port Açma Engeli Yok)
+- Sıfır Sunucu Kurulumu: Güvenli küresel MQTT relay (broker.hivemq.com) üzerinden anlık iletim
+- Uçtan Uca Askeri Şifreleme: Mesajlar bilgisayardan çıkmadan önce AES-256-GCM ile zırhlanır
+- Aradaki aracı sunucu yalnızca anlamsız şifreli metin (AEGIS-MSG-v1:...) görür
 """
 
-import socket
-import threading
 import time
+import uuid
+import threading
 from datetime import datetime
-from typing import Callable, Optional, List
+from typing import Callable, Optional
+import paho.mqtt.client as mqtt
 import crypto_chat
 
-
-def get_local_ip() -> str:
-    """Makinanın yerel IP adresini tespit eder."""
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except Exception:
-        return "127.0.0.1"
+DEFAULT_BROKER = "broker.hivemq.com"
+DEFAULT_PORT = 1883
 
 
-class P2PChatSession:
-    """Hem Host (Oda Sahibi) hem Client (Katılımcı) için ortak P2P motoru."""
+class GlobalEncryptedChatSession:
+    """Dünya çapında çalışan uçtan uca şifreli küresel sohbet oturumu."""
 
-    def __init__(self, username: str, room_key: str, on_message: Callable, on_status: Callable):
-        self.username = username
-        self.room_key = room_key
+    def __init__(self, username: str, room_name: str, room_key: str, on_message: Callable, on_status: Callable):
+        self.username = username.strip() or "Anonim"
+        self.room_name = room_name.strip().lower() or "genel-oda"
+        self.room_key = room_key.strip()
         self.on_message = on_message
         self.on_status = on_status
+        self.session_id = uuid.uuid4().hex[:8]
 
-        self.server_sock: Optional[socket.socket] = None
-        self.conn: Optional[socket.socket] = None
-        self.is_running = False
-        self.is_host = False
+        # Güvenli Kanal Topic'i (HiveMQ üzerinde benzersiz oda yolu)
+        self.topic = f"aegisvault/v3/rooms/{self.room_name}"
+        self.client: Optional[mqtt.Client] = None
+        self.is_connected = False
 
-    def start_host(self, port: int = 9876):
-        """Oda kurucu olarak dinlemeye başlar."""
-        self.is_host = True
-        self.is_running = True
-
-        def listen_worker():
+    def connect(self):
+        """Küresel kanala bağlanır ve şifreli dinlemeyi başlatır."""
+        def worker():
             try:
-                self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                self.server_sock.bind(("0.0.0.0", port))
-                self.server_sock.listen(1)
-                local_ip = get_local_ip()
-                self.on_status(f"🟢 Oda Açıldı! IP: {local_ip}:{port} | Bağlantı bekleniyor...")
+                self.on_status("🟡 Küresel ağa bağlanılıyor (Türkiye ↔ Dünya)...")
+                # MQTT v2 API ile istemci oluştur
+                self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+                self.client.on_connect = self._on_connect
+                self.client.on_message = self._on_mqtt_message
+                self.client.on_disconnect = self._on_disconnect
 
-                self.conn, addr = self.server_sock.accept()
-                self.on_status(f"✅ Karşı taraf bağlandı ({addr[0]})! Sohbet şifreli ve aktif.")
-                self._receive_loop()
+                self.client.connect(DEFAULT_BROKER, DEFAULT_PORT, keepalive=45)
+                self.client.loop_start()
             except Exception as e:
-                if self.is_running:
-                    self.on_status(f"❌ Bağlantı hatası: {e}")
+                self.on_status(f"❌ Bağlantı hatası: {e}")
 
-        threading.Thread(target=listen_worker, daemon=True).start()
+        threading.Thread(target=worker, daemon=True).start()
 
-    def connect_to_host(self, host_ip: str, port: int = 9876):
-        """Var olan bir odaya katılır."""
-        self.is_host = False
-        self.is_running = True
+    def _on_connect(self, client, userdata, flags, rc, properties=None):
+        if rc == 0:
+            self.is_connected = True
+            client.subscribe(self.topic, qos=1)
+            self.on_status(f"🟢 Odaya Bağlanıldı: '{self.room_name}' | AES-256-GCM Şifreleme Aktif!")
+        else:
+            self.on_status(f"❌ Sunucu bağlantıyı reddetti (Hata kodu: {rc})")
 
-        def connect_worker():
-            try:
-                self.on_status(f"🟡 {host_ip}:{port} adresine bağlanılıyor...")
-                self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.conn.connect((host_ip, port))
-                self.on_status(f"✅ Odaya bağlanıldı! AES-256-GCM şifreleme devrede.")
-                self._receive_loop()
-            except Exception as e:
-                self.on_status(f"❌ Bağlantı kurulamadı: {e}")
+    def _on_disconnect(self, client, userdata, disconnect_flags, reason_code=None, properties=None):
+        self.is_connected = False
+        self.on_status("🔴 Sohbet odası bağlantısı kesildi.")
 
-        threading.Thread(target=connect_worker, daemon=True).start()
+    def _on_mqtt_message(self, client, userdata, msg):
+        """Gelen şifreli paketi çözer."""
+        try:
+            token = msg.payload.decode("utf-8").strip()
+            # AES-256-GCM ile çöz
+            payload = crypto_chat.decrypt_message(token, self.room_key)
+            full_text = payload.get("text", "")
+            ts = payload.get("timestamp", datetime.now().strftime("%H:%M:%S"))
 
-    def _receive_loop(self):
-        """Gelen şifreli mesajları dinler ve çözer."""
-        while self.is_running and self.conn:
-            try:
-                raw_data = self.conn.recv(8192)
-                if not raw_data:
-                    break
-                token = raw_data.decode("utf-8").strip()
-                if not token:
-                    continue
+            # Format: SESSION_ID:USERNAME: MESSAGE
+            parts = full_text.split(":", 2)
+            if len(parts) == 3:
+                msg_sid = parts[0]
+                sender = parts[1]
+                body = parts[2].lstrip()
+            else:
+                msg_sid = ""
+                sender = "Bilinmeyen"
+                body = full_text
 
-                try:
-                    payload = crypto_chat.decrypt_message(token, self.room_key)
-                    # payload: {"text": "sender:msg", "timestamp": "..."}
-                    full_text = payload.get("text", "")
-                    ts = payload.get("timestamp", datetime.now().strftime("%H:%M:%S"))
-
-                    sender = "Karşı Taraf"
-                    body = full_text
-                    if ": " in full_text:
-                        parts = full_text.split(": ", 1)
-                        sender = parts[0]
-                        body = parts[1]
-
-                    self.on_message(sender, body, ts, is_mine=False)
-                except Exception:
-                    self.on_status("⚠️ Şifresi çözülemeyen paket alındı (Oda anahtarı uyuşmuyor olabilir).")
-            except Exception:
-                break
-
-        self.on_status("🔴 Sohbet bağlantısı kesildi.")
-        self.close()
+            is_mine = (msg_sid == self.session_id)
+            # Kendi gönderdiğimiz mesaj yerel olarak zaten eklendi, sadece karşı tarafı göster
+            if not is_mine:
+                self.on_message(sender, body, ts, False)
+        except Exception:
+            # Yanlış oda şifresi girilmişse veya kurcalanmışsa çözülemez
+            pass
 
     def send_message(self, text: str) -> bool:
-        """Mesajı zırhlayıp karşı tarafa gönderir."""
-        if not self.conn:
+        """Mesajı AES-256-GCM ile zırhlayıp küresel kanala yayınlar."""
+        if not self.client or not self.is_connected:
             return False
 
         try:
-            formatted = f"{self.username}: {text}"
+            # Oturum kimliği ve kullanıcı adıyla paketle
+            formatted = f"{self.session_id}:{self.username}: {text}"
             token = crypto_chat.encrypt_message(formatted, self.room_key)
-            self.conn.sendall((token + "\n").encode("utf-8"))
+            self.client.publish(self.topic, token, qos=1)
             ts = datetime.now().strftime("%H:%M:%S")
-            self.on_message(self.username, text, ts, is_mine=True)
+            self.on_message(self.username, text, ts, True)
             return True
-        except Exception:
+        except Exception as e:
             return False
 
     def close(self):
-        self.is_running = False
-        if self.conn:
+        self.is_connected = False
+        if self.client:
             try:
-                self.conn.close()
+                self.client.loop_stop()
+                self.client.disconnect()
             except Exception:
                 pass
-            self.conn = None
-        if self.server_sock:
-            try:
-                self.server_sock.close()
-            except Exception:
-                pass
-            self.server_sock = None
+            self.client = None

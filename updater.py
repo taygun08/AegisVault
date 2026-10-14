@@ -44,8 +44,12 @@ def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, s
                 if tag_name and tag_name > CURRENT_VERSION and download_url:
                     return True, tag_name, download_url, body
                 return False, tag_name or CURRENT_VERSION, "", "Zaten en güncel sürümü kullanıyorsunuz."
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return False, CURRENT_VERSION, "", "GitHub'da henüz bir 'Release' paketi yayınlanmadı veya depo 'Private' durumdadır. Deponuz Public olduğunda veya ilk Release eklendiğinde buradan tek tıkla otomatik güncellenecektir."
+        return False, CURRENT_VERSION, "", f"GitHub bağlantı hatası (HTTP {e.code}): {e.reason}"
     except Exception as e:
-        return False, CURRENT_VERSION, "", f"GitHub kontrolü yapılamadı (Repo henüz public olmayabilir veya offline): {e}"
+        return False, CURRENT_VERSION, "", f"GitHub kontrolü yapılamadı (Çevrimdışı veya ağ hatası): {e}"
 
     return False, CURRENT_VERSION, "", "Güncelleme bulunamadı."
 

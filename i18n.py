@@ -79,13 +79,18 @@ TRANSLATIONS = {
         "btn_refresh_prices": "🔄 Fiyatları & Bakiyeleri Güncelle",
         
         # Canlı P2P Chat
-        "p2p_chat_title": "💬 Canlı P2P Güvenli Sohbet Ağı (Doğrudan İki Bilgisayar)",
-        "p2p_chat_desc": "💡 Bu Ne İşe Yarar?\nTelegram veya WhatsApp gibi merkezi bir sunucuya ihtiyaç duymadan, doğrudan iki bilgisayar arasında AES-256-GCM ile şifreli soket bağlantısı kurar. Biri 'Oda Kur' der, diğeri IP ve oda parolasını girip 'Bağlan' der.",
+        "p2p_chat_title": "💬 Küresel Uçtan Uca Şifreli Sohbet Ağı (Türkiye ↔ Dünya)",
+        "p2p_chat_desc": "💡 Bu Ne İşe Yarar?\nDünyanın neresinde olursanız olun (Türkiye ↔ İngiltere vb.), port açmaya veya IP yapılandırmasına gerek olmadan anında canlı ve uçtan uca AES-256-GCM şifreli iletişim kurar. Ortak 'Oda Adı' ve 'Oda Şifresi' belirlemeniz yeterlidir. İletilen tüm veri askeri kripto ile zırhlandığı için aracı sunucu yalnızca anlamsız şifreli metin (AEGIS-MSG-v1:...) görür.",
         "p2p_tab_host": "Oda Kur (Host)",
         "p2p_tab_join": "Odaya Katıl (Join)",
         "p2p_room_key": "Oda Güvenlik Parolası:",
         "btn_host_start": "Odayı Başlat (Dinle)",
         "btn_join_start": "Odaya Bağlan",
+        "btn_chat_connect": "🟢 Odaya Bağlan (Dünya Çapı)",
+        "btn_chat_disconnect": "🔴 Odadan Ayrıl",
+        "chat_nick": "Rumuz:",
+        "chat_room_name": "Oda Adı (Kanal):",
+        "chat_room_key": "Oda Şifresi (AES-256):",
         "btn_send": "GÖNDER",
         "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu"
     },
@@ -159,13 +164,18 @@ TRANSLATIONS = {
         "btn_refresh_prices": "🔄 Refresh Prices & Balances",
         
         # Live P2P Chat
-        "p2p_chat_title": "💬 Live P2P Encrypted Chat Network (Direct PC-to-PC)",
-        "p2p_chat_desc": "💡 How Does This Work?\nConnects two computers directly via an AES-256-GCM encrypted socket without needing centralized servers like Telegram. One party acts as Host, the other enters the Host IP and Room Passkey to connect.",
+        "p2p_chat_title": "💬 Global End-to-End Encrypted Chat (Turkey ↔ Worldwide)",
+        "p2p_chat_desc": "💡 How Does This Work?\nConnects computers anywhere across the globe (e.g. Turkey ↔ UK) instantly without port forwarding or IP exposure. Simply agree on a 'Room Name' and 'Room Key'. All messages are armored with AES-256-GCM before transmission; the relay broker only sees ciphertext (AEGIS-MSG-v1:...).",
         "p2p_tab_host": "Host Room",
         "p2p_tab_join": "Join Room",
         "p2p_room_key": "Room Security Passkey:",
         "btn_host_start": "Start Room (Listen)",
         "btn_join_start": "Connect to Room",
+        "btn_chat_connect": "🟢 Connect to Room (Global)",
+        "btn_chat_disconnect": "🔴 Leave Room",
+        "chat_nick": "Nickname:",
+        "chat_room_name": "Room Name (Channel):",
+        "chat_room_key": "Room Key (AES-256):",
         "btn_send": "SEND",
         "security_info_title": "🛡️ Military Cryptography Guide"
     },
@@ -239,13 +249,18 @@ TRANSLATIONS = {
         "btn_refresh_prices": "🔄 Обновить цены и балансы",
         
         # P2P Chat
-        "p2p_chat_title": "💬 Живой P2P Зашифрованный Чат (Напрямую между ПК)",
-        "p2p_chat_desc": "💡 Как это работает?\nСвязывает два компьютера напрямую через зашифрованный сокет AES-256-GCM без центральных серверов. Один создает комнату, второй подключается по IP и паролю комнаты.",
+        "p2p_chat_title": "💬 Глобальный зашифрованный чат (Турция ↔ Весь мир)",
+        "p2p_chat_desc": "💡 Как это работает?\nМгновенно связывает участников по всему миру (напр. Турция ↔ Великобритания) без проброса портов и IP. Достаточно указать общее 'Имя комнаты' и 'Пароль комнаты'. Все сообщения шифруются AES-256-GCM; релей видит только шифротекст (AEGIS-MSG-v1:...).",
         "p2p_tab_host": "Создать комнату (Host)",
         "p2p_tab_join": "Присоединиться (Join)",
         "p2p_room_key": "Пароль комнаты:",
         "btn_host_start": "Запустить комнату (Слушать)",
         "btn_join_start": "Подключиться к комнате",
+        "btn_chat_connect": "🟢 Войти в комнату (Глобально)",
+        "btn_chat_disconnect": "🔴 Выйти из комнаты",
+        "chat_nick": "Ваш ник:",
+        "chat_room_name": "Имя комнаты (Канал):",
+        "chat_room_key": "Пароль (AES-256):",
         "btn_send": "ОТПРАВИТЬ",
         "security_info_title": "🛡️ Справочник по криптографии"
     }
