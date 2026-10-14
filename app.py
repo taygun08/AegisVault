@@ -12,10 +12,13 @@ Yeni Özellikler:
 import os
 import sys
 import time
+import base64
+import json
 import secrets
 import threading
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
+from PIL import Image
 
 import i18n
 from i18n import get_text
@@ -23,6 +26,7 @@ import vault_storage
 import crypto_utils
 import crypto_portfolio
 import live_p2p_chat
+import airgap_crypto
 import updater
 import military_audit
 from military_vault import VaultSecurityError
@@ -422,6 +426,7 @@ class AegisVaultApp(ctk.CTk):
             ("vault", get_text("nav_vault")),
             ("portfolio", get_text("nav_portfolio")),
             ("p2p_chat", get_text("nav_p2p_chat")),
+            ("airgap", get_text("nav_airgap")),
             ("shamir", get_text("nav_shamir")),
             ("bip39", get_text("nav_bip39")),
             ("audit", get_text("nav_audit")),
@@ -535,6 +540,8 @@ class AegisVaultApp(ctk.CTk):
             self._render_portfolio_view(tab_container)
         elif self.current_tab == "p2p_chat":
             self._render_p2p_chat_view(tab_container)
+        elif self.current_tab == "airgap":
+            self._render_airgap_view(tab_container)
         elif self.current_tab == "shamir":
             self._render_shamir_view(tab_container)
         elif self.current_tab == "bip39":
@@ -588,8 +595,22 @@ class AegisVaultApp(ctk.CTk):
         self.search_entry.grid(row=0, column=0, sticky="w")
         self.search_entry.bind("<KeyRelease>", lambda e: self._render_vault_cards())
 
+        btn_grp = ctk.CTkFrame(top_controls, fg_color="transparent")
+        btn_grp.grid(row=0, column=1, sticky="e")
+
+        add_file_btn = ctk.CTkButton(
+            btn_grp,
+            text=get_text("btn_add_file"),
+            font=ctk.CTkFont(size=12, weight="bold"),
+            fg_color="#10b981",
+            hover_color="#059669",
+            height=36,
+            command=self.open_add_file_modal
+        )
+        add_file_btn.pack(side="left", padx=4)
+
         add_btn = ctk.CTkButton(
-            top_controls,
+            btn_grp,
             text=get_text("btn_add_secret"),
             font=ctk.CTkFont(size=12, weight="bold"),
             fg_color="#0284c7",
@@ -597,7 +618,7 @@ class AegisVaultApp(ctk.CTk):
             height=36,
             command=self.open_add_secret_modal
         )
-        add_btn.grid(row=0, column=1, sticky="e")
+        add_btn.pack(side="left", padx=4)
 
         self.vault_cards_frame = ctk.CTkScrollableFrame(parent, fg_color="transparent")
         self.vault_cards_frame.grid(row=1, column=0, sticky="nsew")
@@ -633,6 +654,7 @@ class AegisVaultApp(ctk.CTk):
     def _create_vault_card(self, item: dict):
         item_id = item["id"]
         is_revealed = item_id in self.revealed_secrets
+        is_file = item.get("is_file", False)
 
         card = ctk.CTkFrame(self.vault_cards_frame, corner_radius=10, fg_color="#111827", border_width=1, border_color="#1f2937")
         card.pack(fill="x", pady=5, padx=3)
@@ -644,6 +666,7 @@ class AegisVaultApp(ctk.CTk):
             "Özel Anahtar (Private Key)": "#ef4444",
             "Kullanıcı Parolası": "#3b82f6",
             "Gizli Not": "#10b981",
+            "Şifreli Dosya / Belge": "#10b981"
         }.get(category, "#8b5cf6")
 
         title_box = ctk.CTkFrame(card, fg_color="transparent")
@@ -657,39 +680,62 @@ class AegisVaultApp(ctk.CTk):
         secret_box = ctk.CTkFrame(card, fg_color="#1e293b", corner_radius=8)
         secret_box.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
-        display_text = item["secret"] if is_revealed else "•" * 24
-        lbl_secret = ctk.CTkLabel(
-            secret_box,
-            text=display_text,
-            font=ctk.CTkFont(family="Consolas", size=13),
-            text_color="#38bdf8" if is_revealed else "#94a3b8"
-        )
-        lbl_secret.pack(side="left", padx=12, pady=6)
+        if is_file:
+            display_text = f"📄 {item.get('file_name')} ({item.get('file_size', 0):,} Bayt - AES-256-GCM Korumalı)"
+            lbl_secret = ctk.CTkLabel(
+                secret_box,
+                text=display_text,
+                font=ctk.CTkFont(family="Consolas", size=12, weight="bold"),
+                text_color="#4ade80"
+            )
+            lbl_secret.pack(side="left", padx=12, pady=6)
+        else:
+            display_text = item["secret"] if is_revealed else "•" * 24
+            lbl_secret = ctk.CTkLabel(
+                secret_box,
+                text=display_text,
+                font=ctk.CTkFont(family="Consolas", size=13),
+                text_color="#38bdf8" if is_revealed else "#94a3b8"
+            )
+            lbl_secret.pack(side="left", padx=12, pady=6)
 
         btn_box = ctk.CTkFrame(card, fg_color="transparent")
         btn_box.grid(row=0, column=2, padx=14, pady=10, sticky="e")
 
-        eye_btn = ctk.CTkButton(
-            btn_box,
-            text=get_text("btn_hide") if is_revealed else get_text("btn_show"),
-            width=70,
-            height=30,
-            fg_color="#334155",
-            hover_color="#475569",
-            command=lambda i=item_id: self._toggle_reveal_secret(i)
-        )
-        eye_btn.pack(side="left", padx=3)
+        if is_file:
+            export_btn = ctk.CTkButton(
+                btn_box,
+                text="💾 Çöz & Dışa Aktar",
+                font=ctk.CTkFont(size=11, weight="bold"),
+                width=120,
+                height=30,
+                fg_color="#059669",
+                hover_color="#047857",
+                command=lambda i=item: self._export_file_item(i)
+            )
+            export_btn.pack(side="left", padx=3)
+        else:
+            eye_btn = ctk.CTkButton(
+                btn_box,
+                text=get_text("btn_hide") if is_revealed else get_text("btn_show"),
+                width=70,
+                height=30,
+                fg_color="#334155",
+                hover_color="#475569",
+                command=lambda i=item_id: self._toggle_reveal_secret(i)
+            )
+            eye_btn.pack(side="left", padx=3)
 
-        copy_btn = ctk.CTkButton(
-            btn_box,
-            text="📋",
-            width=36,
-            height=30,
-            fg_color="#0284c7",
-            hover_color="#0369a1",
-            command=lambda s=item["secret"]: self._copy_to_clipboard(s)
-        )
-        copy_btn.pack(side="left", padx=3)
+            copy_btn = ctk.CTkButton(
+                btn_box,
+                text="📋",
+                width=36,
+                height=30,
+                fg_color="#0284c7",
+                hover_color="#0369a1",
+                command=lambda s=item["secret"]: self._copy_to_clipboard(s)
+            )
+            copy_btn.pack(side="left", padx=3)
 
         del_btn = ctk.CTkButton(
             btn_box,
@@ -702,6 +748,50 @@ class AegisVaultApp(ctk.CTk):
             command=lambda i=item_id, t=item["title"]: self._delete_secret(i, t)
         )
         del_btn.pack(side="left", padx=3)
+
+    def open_add_file_modal(self):
+        fpath = filedialog.askopenfilename(
+            title="Kasaya Eklenecek Dosyayı Seçin (PDF, Word, Excel, Resim, Anahtar)",
+            filetypes=[("Tüm Dosyalar", "*.*")]
+        )
+        if not fpath:
+            return
+
+        fsize = os.path.getsize(fpath)
+        if fsize > 15 * 1024 * 1024:
+            messagebox.showerror("Boyut Aşımı", "Kasa performansı için dosya boyutu maksimum 15 MB olmalıdır!")
+            return
+
+        fname = os.path.basename(fpath)
+        with open(fpath, "rb") as f:
+            file_bytes = f.read()
+
+        vault_storage.add_file_item(
+            self.effective_password or self.master_password,
+            self.vault_data,
+            title=fname,
+            file_name=fname,
+            file_bytes=file_bytes,
+            notes=f"Orijinal Konum: {fpath}"
+        )
+        self._render_vault_cards()
+        messagebox.showinfo("Başarılı", f"'{fname}' dosyası AES-256-GCM ile zırhlanarak kasaya güvenle eklendi!")
+
+    def _export_file_item(self, item: dict):
+        fname = item.get("file_name", "dosya.bin")
+        dest = filedialog.asksaveasfilename(
+            initialfile=fname,
+            title="Şifreli Dosyayı Çözüp Kaydedeceğiniz Konumu Seçin"
+        )
+        if not dest:
+            return
+        try:
+            raw_b = base64.b64decode(item["file_b64"])
+            with open(dest, "wb") as f:
+                f.write(raw_b)
+            messagebox.showinfo("Başarılı", f"'{fname}' başarıyla çözüldü ve diske kaydedildi:\n{dest}")
+        except Exception as e:
+            messagebox.showerror("Hata", f"Dosya dışa aktarılamadı: {e}")
 
     def _toggle_reveal_secret(self, item_id: str):
         if item_id in self.revealed_secrets:
@@ -1023,6 +1113,45 @@ class AegisVaultApp(ctk.CTk):
 
         def on_msg_received(sender, text, ts, is_mine):
             def add_bubble():
+                if text.startswith("[FILE-DROP]:"):
+                    try:
+                        f_json = json.loads(text[len("[FILE-DROP]:"):].strip())
+                        fname = f_json.get("filename", "belge.bin")
+                        fsize = f_json.get("size", 0)
+                        b64_content = f_json.get("data", "")
+                    except Exception:
+                        fname = "belge.bin"
+                        fsize = 0
+                        b64_content = ""
+
+                    bubble = ctk.CTkFrame(
+                        self.p2p_messages_box,
+                        fg_color="#064e3b" if is_mine else "#14532d",
+                        border_width=1,
+                        border_color="#22c55e",
+                        corner_radius=8
+                    )
+                    bubble.pack(fill="x", pady=4, padx=8)
+
+                    hdr = f"{sender} ({ts}) 📎 [ŞİFRELİ DOSYA TRANSFERİ]" if not is_mine else f"Siz ({ts}) 📎 [ŞİFRELİ DOSYA GÖNDERİLDİ]"
+                    ctk.CTkLabel(bubble, text=hdr, font=ctk.CTkFont(size=10, weight="bold"), text_color="#86efac").pack(anchor="w", padx=10, pady=(4, 0))
+                    ctk.CTkLabel(bubble, text=f"📄 {fname}  ({fsize:,} Bayt - AES-256-GCM Zırhlı)", font=ctk.CTkFont(size=13, weight="bold"), text_color="#ffffff").pack(anchor="w", padx=10, pady=(2, 4))
+
+                    def save_dropped_file():
+                        dest = filedialog.asksaveasfilename(initialfile=fname, title="Şifreli Dosyayı Kaydet")
+                        if not dest:
+                            return
+                        try:
+                            with open(dest, "wb") as f:
+                                f.write(base64.b64decode(b64_content))
+                            messagebox.showinfo("Başarılı", f"Dosya başarıyla çözüldü ve kaydedildi:\n{dest}")
+                        except Exception as e:
+                            messagebox.showerror("Hata", f"Dosya kaydedilemedi: {e}")
+
+                    dl_btn = ctk.CTkButton(bubble, text=f"💾 '{fname}' İndir & Çöz", font=ctk.CTkFont(size=11, weight="bold"), fg_color="#16a34a", hover_color="#15803d", height=28, command=save_dropped_file)
+                    dl_btn.pack(anchor="w", padx=10, pady=(2, 8))
+                    return
+
                 is_burn = text.startswith("[BURNT-30]:")
                 display_text = text[len("[BURNT-30]:"):].strip() if is_burn else text
 
@@ -1124,6 +1253,39 @@ class AegisVaultApp(ctk.CTk):
         msg_input = ctk.CTkEntry(bot_send, placeholder_text="Uçtan uca AES-256-GCM şifreli mesajınızı yazın...", height=40)
         msg_input.grid(row=0, column=1, sticky="ew", padx=(0, 8))
 
+        def send_file_p2p():
+            if not self.p2p_session or not self.p2p_session.is_connected:
+                messagebox.showwarning("Not Connected", "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.")
+                return
+
+            fpath = filedialog.askopenfilename(
+                title="Şifrelenip Gönderilecek Dosyayı Seçin (Maks. 250 KB)",
+                filetypes=[("Tüm Dosyalar", "*.*")]
+            )
+            if not fpath:
+                return
+
+            fsize = os.path.getsize(fpath)
+            if fsize > 260 * 1024:
+                messagebox.showerror("Boyut Aşımı", f"Taktik anlık transfer için dosya boyutu maksimum 250 KB olmalıdır!\nSeçilen dosya: {fsize // 1024} KB.\n(Daha büyük dosyalar için lütfen 'Şifreli Dosya Kasası'nı kullanın).")
+                return
+
+            fname = os.path.basename(fpath)
+            with open(fpath, "rb") as f:
+                raw_bytes = f.read()
+
+            b64_data = base64.b64encode(raw_bytes).decode("ascii")
+            file_payload = json.dumps({
+                "type": "file",
+                "filename": fname,
+                "size": fsize,
+                "data": b64_data
+            })
+
+            packet = f"[FILE-DROP]: {file_payload}"
+            if self.p2p_session.send_message(packet):
+                messagebox.showinfo("Gönderildi", f"'{fname}' dosyası AES-256-GCM ile zırhlanarak karşı tarafa başarıyla iletildi!")
+
         def send_p2p(event=None):
             txt = msg_input.get().strip()
             if not txt:
@@ -1137,8 +1299,139 @@ class AegisVaultApp(ctk.CTk):
 
         msg_input.bind("<Return>", send_p2p)
 
+        file_btn = ctk.CTkButton(bot_send, text="📎 Dosya", font=ctk.CTkFont(size=12, weight="bold"), fg_color="#10b981", hover_color="#059669", width=85, height=40, command=send_file_p2p)
+        file_btn.grid(row=0, column=2, padx=(0, 6))
+
         send_btn = ctk.CTkButton(bot_send, text=get_text("btn_send"), fg_color="#0284c7", width=100, height=40, command=send_p2p)
-        send_btn.grid(row=0, column=2)
+        send_btn.grid(row=0, column=3)
+
+    # =========================================================================
+    # HAVA BOŞLUKLU (AIR-GAPPED) ASKERİ OPTİK QR İLETİŞİMİ
+    # =========================================================================
+    def _render_airgap_view(self, parent):
+        parent.grid_rowconfigure(1, weight=1)
+
+        info_card = ctk.CTkFrame(parent, fg_color="#14532d", border_width=1, border_color="#16a34a", corner_radius=10)
+        info_card.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        info_lbl = ctk.CTkLabel(info_card, text=get_text("airgap_desc"), font=ctk.CTkFont(size=12), text_color="#bbf7d0", justify="left", wraplength=820)
+        info_lbl.pack(padx=16, pady=10, anchor="w")
+
+        tabview = ctk.CTkTabview(parent)
+        tabview.grid(row=1, column=0, sticky="nsew")
+        tab_tx = tabview.add(get_text("tab_airgap_tx"))
+        tab_rx = tabview.add(get_text("tab_airgap_rx"))
+
+        # --- TAB 1: VERİCİ (TRANSMIT) ---
+        tab_tx.grid_columnconfigure(0, weight=1)
+        tab_tx.grid_columnconfigure(1, weight=1)
+
+        tx_left = ctk.CTkFrame(tab_tx, fg_color="transparent")
+        tx_left.grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
+
+        ctk.CTkLabel(tx_left, text="Aktarılacak Gizli Metin / Seed / Koordinat:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(0, 4))
+        tx_input = ctk.CTkTextbox(tx_left, height=130, font=ctk.CTkFont(family="Consolas", size=12))
+        tx_input.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(tx_left, text="AES-256-GCM Şifreleme Parolası (İsteğe Bağlı):", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(0, 4))
+        tx_key = ctk.CTkEntry(tx_left, placeholder_text="Boş bırakılırsa düz metin QR üretilir...", show="*", height=36)
+        tx_key.pack(fill="x", pady=(0, 15))
+
+        tx_right = ctk.CTkFrame(tab_tx, fg_color="#0b1120", corner_radius=12)
+        tx_right.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+
+        qr_display_lbl = ctk.CTkLabel(tx_right, text="QR Kod Burada Görünecek", text_color="#64748b")
+        qr_display_lbl.pack(expand=True, pady=10)
+
+        tx_current_img = {"pil": None}
+
+        def do_generate_qr():
+            txt = tx_input.get("1.0", "end").strip()
+            if not txt:
+                messagebox.showerror("Hata", "Lütfen aktarılacak metni girin!")
+                return
+            key = tx_key.get().strip() or None
+            try:
+                pil_img, token = airgap_crypto.generate_airgap_qr(txt, key)
+                tx_current_img["pil"] = pil_img
+                ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(240, 240))
+                qr_display_lbl.configure(image=ctk_img, text="")
+                save_qr_btn.configure(state="normal")
+            except Exception as e:
+                messagebox.showerror("Hata", f"QR Kod üretilemedi: {e}")
+
+        def do_save_qr():
+            if not tx_current_img["pil"]:
+                return
+            dest = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=[("PNG Görseli", "*.png")],
+                title="QR Kod Görselini Kaydet"
+            )
+            if dest:
+                tx_current_img["pil"].save(dest)
+                messagebox.showinfo("Kaydedildi", f"QR Kod başarıyla kaydedildi:\n{dest}")
+
+        gen_qr_btn = ctk.CTkButton(tx_left, text="⚡ Şifrele & Optik QR Üret", font=ctk.CTkFont(size=13, weight="bold"), fg_color="#059669", hover_color="#047857", height=40, command=do_generate_qr)
+        gen_qr_btn.pack(fill="x", pady=(0, 8))
+
+        save_qr_btn = ctk.CTkButton(tx_left, text="💾 QR Kodunu Resim Olarak Kaydet (PNG)", fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", height=34, state="disabled", command=do_save_qr)
+        save_qr_btn.pack(fill="x")
+
+        # --- TAB 2: ALICI (RECEIVE) ---
+        tab_rx.grid_columnconfigure(0, weight=1)
+
+        rx_frame = ctk.CTkFrame(tab_rx, fg_color="transparent")
+        rx_frame.pack(fill="both", expand=True, padx=20, pady=15)
+
+        top_rx_btns = ctk.CTkFrame(rx_frame, fg_color="transparent")
+        top_rx_btns.pack(fill="x", pady=(0, 10))
+
+        def load_qr_file():
+            fpath = filedialog.askopenfilename(
+                title="QR Kodu İçeren Görseli Seçin",
+                filetypes=[("Resim Dosyaları", "*.png;*.jpg;*.jpeg;*.bmp")]
+            )
+            if not fpath:
+                return
+            try:
+                decoded_str = airgap_crypto.decode_airgap_image(fpath)
+                rx_token_entry.delete("1.0", "end")
+                rx_token_entry.insert("1.0", decoded_str)
+                messagebox.showinfo("QR Tespit Edildi", f"Görselden {len(decoded_str)} karakterlik veri başarıyla okundu!")
+            except Exception as e:
+                messagebox.showerror("Okuma Hatası", str(e))
+
+        load_img_btn = ctk.CTkButton(top_rx_btns, text="🖼️ QR Görsel Dosyası Yükle (OpenCV)", fg_color="#0284c7", hover_color="#0369a1", height=36, command=load_qr_file)
+        load_img_btn.pack(side="left", padx=(0, 10))
+
+        ctk.CTkLabel(rx_frame, text="QR Koddan Okunan / Yapıştırılan Token:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
+        rx_token_entry = ctk.CTkTextbox(rx_frame, height=90, font=ctk.CTkFont(family="Consolas", size=11))
+        rx_token_entry.pack(fill="x", pady=(0, 8))
+
+        ctk.CTkLabel(rx_frame, text="AES-256-GCM Çözme Parolası:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
+        rx_key_entry = ctk.CTkEntry(rx_frame, placeholder_text="Şifreli ise parolayı girin...", show="*", height=36)
+        rx_key_entry.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(rx_frame, text="Çözülen Orijinal Gizli Veri:", font=ctk.CTkFont(size=12, weight="bold")).pack(anchor="w", pady=(5, 3))
+        rx_result_box = ctk.CTkTextbox(rx_frame, height=100, font=ctk.CTkFont(family="Consolas", size=12))
+        rx_result_box.pack(fill="x", pady=(0, 10))
+
+        def do_decrypt_qr():
+            raw_token = rx_token_entry.get("1.0", "end").strip()
+            if not raw_token:
+                messagebox.showerror("Hata", "Lütfen bir QR token yükleyin veya yapıştırın!")
+                return
+            key = rx_key_entry.get().strip() or None
+            try:
+                plain = airgap_crypto.decrypt_airgap_token(raw_token, key)
+                rx_result_box.delete("1.0", "end")
+                rx_result_box.insert("1.0", plain)
+                messagebox.showinfo("Başarılı", "Hava boşluklu veri başarıyla çözüldü ve bütünlüğü doğrulandı!")
+            except Exception as e:
+                messagebox.showerror("Çözme Hatası", str(e))
+
+        decrypt_btn = ctk.CTkButton(rx_frame, text="🔓 Şifreli QR Verisini Çöz & Doğrula", font=ctk.CTkFont(size=13, weight="bold"), fg_color="#059669", hover_color="#047857", height=40, command=do_decrypt_qr)
+        decrypt_btn.pack(fill="x")
 
     # =========================================================================
     # 6. SHAMIR'S SECRET SHARING (SSS)

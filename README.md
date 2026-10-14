@@ -22,7 +22,10 @@
 * **⏱️ Inactivity Auto-Lock:** Wipes RAM keys and auto-locks after 120 seconds of user inactivity.
 * **🛡️ FIPS 140-3 Power-On Self-Tests (POST):** Automated boot-up verification with official NIST SP 800-38D Known-Answer Tests (KAT) for AES-256-GCM, scrypt KDF, and CSPRNG continuous health.
 * **📜 Tamper-Evident Hash-Chained Audit Trail:** Blockchain-like cryptographic event log chaining every action with SHA-256 hashes to guarantee mathematical audit integrity.
-* **⚠️ Emergency Cryptographic Zeroization:** DoD 5220.22-M sanitization protocol overwriting cryptographic memory and vault files with multi-pass random entropy in panic/capture scenarios.
+* **⏱️ Burn-After-Reading Ephemeral Messaging:** Self-destructing tactical intelligence messages automatically purged from memory and display after 30 seconds.
+* **📎 Tactical Encrypted File Drop:** End-to-end AES-256-GCM document/image/payload transfer over decentralized real-time relay channels.
+* **📁 Encrypted File Locker (Vault):** Store and protect confidential files (PDF, Office, keys, maps) with AES-256-GCM inside the encrypted user vault.
+* **📲 Air-Gapped Optical QR Communication:** Optical data transfer for classified and network-isolated environments (no Wi-Fi, no Bluetooth, no cables) using encrypted dynamic QR codes and OpenCV machine vision decoding.
 * **🌐 Multilingual:** Full localization in 🇹🇷 Türkçe, 🇬🇧 English, and 🇷🇺 Русский.
 
 ---

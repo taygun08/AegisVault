@@ -16,6 +16,7 @@ import uuid
 import time
 import platform
 import hashlib
+import base64
 from datetime import datetime
 from typing import Optional, Dict, Any, Tuple, List
 from military_vault import MilitaryVault, VaultSecurityError
@@ -245,6 +246,34 @@ def add_secret_item(password: str, vault_data: Dict[str, Any], title: str, categ
         "title": title.strip(),
         "category": category,
         "secret": secret_value,
+        "notes": notes.strip(),
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    vault_data["items"].insert(0, item)
+    save_vault(password, vault_data, is_decoy=vault_data.get("is_decoy", False))
+    return item
+
+
+def add_file_item(
+    password: str,
+    vault_data: Dict[str, Any],
+    title: str,
+    file_name: str,
+    file_bytes: bytes,
+    notes: str = ""
+) -> Dict[str, Any]:
+    """Herhangi bir dosyayı (PDF, DOCX, resim, anahtar) base64 ile şifreli kasaya ekler."""
+    vault_data.setdefault("items", [])
+    b64_str = base64.b64encode(file_bytes).decode("ascii")
+    item = {
+        "id": str(uuid.uuid4()),
+        "title": title.strip() or file_name,
+        "category": "Şifreli Dosya / Belge",
+        "is_file": True,
+        "file_name": file_name,
+        "file_size": len(file_bytes),
+        "file_b64": b64_str,
+        "secret": f"[ŞİFRELİ DOSYA]: {file_name} ({len(file_bytes):,} Bayt)",
         "notes": notes.strip(),
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }

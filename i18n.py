@@ -92,7 +92,17 @@ TRANSLATIONS = {
         "chat_room_name": "Oda Adı (Kanal):",
         "chat_room_key": "Oda Şifresi (AES-256):",
         "btn_send": "GÖNDER",
-        "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu"
+        "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu",
+        
+        # Airgap & Dosya Kasası
+        "nav_airgap": "📲 Hava Boşluklu (Air-Gap) QR",
+        "btn_add_file": "📁 Şifreli Dosya Ekle",
+        "btn_export_file": "💾 Dosyayı Çöz & Dışa Aktar",
+        "btn_send_file": "📎 Dosya Gönder",
+        "airgap_title": "📲 Hava Boşluklu (Air-Gapped) Askeri Optik İletişim",
+        "airgap_desc": "💡 Bu Ne İşe Yarar?\nİnternetin, Wi-Fi'ın ve kabloların tamamen yasak olduğu çok gizli ve izole ortamlarda (Air-Gapped), veriyi AES-256-GCM ile zırhlayıp ekrandaki optik QR kod üzerinden diğer cihazlara aktarır.",
+        "tab_airgap_tx": "📤 Şifreli QR Verici (Transmit)",
+        "tab_airgap_rx": "📥 QR Kod Alıcı / Çözücü (Receive)"
     },
     
     "en": {
@@ -177,7 +187,17 @@ TRANSLATIONS = {
         "chat_room_name": "Room Name (Channel):",
         "chat_room_key": "Room Key (AES-256):",
         "btn_send": "SEND",
-        "security_info_title": "🛡️ Military Cryptography Guide"
+        "security_info_title": "🛡️ Military Cryptography Guide",
+        
+        # Airgap & File Locker
+        "nav_airgap": "📲 Air-Gapped Optical QR",
+        "btn_add_file": "📁 Add Encrypted File",
+        "btn_export_file": "💾 Decrypt & Export File",
+        "btn_send_file": "📎 Send File",
+        "airgap_title": "📲 Air-Gapped Military Optical Communication",
+        "airgap_desc": "💡 How Does This Work?\nIn highly classified and air-gapped facilities where all network cables and Wi-Fi are strictly prohibited, transmits AES-256-GCM encrypted data via optical high-density QR codes.",
+        "tab_airgap_tx": "📤 Transmit Encrypted QR",
+        "tab_airgap_rx": "📥 Receive & Decrypt QR"
     },
     
     "ru": {
@@ -262,7 +282,17 @@ TRANSLATIONS = {
         "chat_room_name": "Имя комнаты (Канал):",
         "chat_room_key": "Пароль (AES-256):",
         "btn_send": "ОТПРАВИТЬ",
-        "security_info_title": "🛡️ Справочник по криптографии"
+        "security_info_title": "🛡️ Справочник по криптографии",
+        
+        # Airgap & File Locker
+        "nav_airgap": "📲 Оптический QR (Air-Gap)",
+        "btn_add_file": "📁 Зашифровать файл в хранилище",
+        "btn_export_file": "💾 Расшифровать и выгрузить",
+        "btn_send_file": "📎 Отправить файл",
+        "airgap_title": "📲 Оптическая связь с воздушным зазором (Air-Gap)",
+        "airgap_desc": "💡 Как это работает?\nВ изолированных военных помещениях без интернета и Wi-Fi передает зашифрованные данные AES-256-GCM через оптические QR-коды на экране.",
+        "tab_airgap_tx": "📤 Передать QR",
+        "tab_airgap_rx": "📥 Принять и расшифровать QR"
     }
 }
 
