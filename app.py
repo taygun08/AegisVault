@@ -426,10 +426,9 @@ class AegisVaultApp(ctk.CTk):
         )
         prof_lbl.pack()
 
-        status_text = get_text("status_decoy") if self.is_decoy else get_text("status_active")
-        status_color = "#f59e0b" if self.is_decoy else "#4ade80"
+        # Security badge always displays active AES-256-GCM to maintain plausible deniability (duress mode)
         sec_badge = ctk.CTkLabel(
-            sidebar, text=status_text, font=ctk.CTkFont(size=11, weight="bold"), text_color=status_color
+            sidebar, text=get_text("status_active"), font=ctk.CTkFont(size=11, weight="bold"), text_color="#4ade80"
         )
         sec_badge.pack(pady=(2, 10))
 
