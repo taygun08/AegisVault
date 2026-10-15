@@ -74,7 +74,7 @@ def fetch_live_btc_balance(address: str) -> float:
 
 
 def fetch_live_prices() -> Dict[str, Dict[str, float]]:
-    """Fetches real-time ticker prices for BTC, ETH, SOL."""
+    """Fetches real-time ticker prices for BTC, ETH, SOL and live USD/TRY rate."""
     url = "https://api.binance.com/api/v3/ticker/price"
     prices = dict(DEFAULT_PRICES)
 
@@ -83,6 +83,17 @@ def fetch_live_prices() -> Dict[str, Dict[str, float]]:
         with urllib.request.urlopen(req, timeout=3.5) as response:
             if response.status == 200:
                 data = json.loads(response.read().decode())
+                
+                # Dynamically extract live USD/TRY rate from Binance
+                usd_try_rate = 49.0
+                for item in data:
+                    if item.get("symbol") == "USDTTRY":
+                        try:
+                            usd_try_rate = float(item.get("price", 49.0))
+                        except Exception:
+                            pass
+                        break
+
                 pair_map = {"BTCUSDT": "BTC", "ETHUSDT": "ETH", "SOLUSDT": "SOL"}
                 for item in data:
                     symbol = item.get("symbol")
@@ -91,7 +102,7 @@ def fetch_live_prices() -> Dict[str, Dict[str, float]]:
                         usd_price = float(item.get("price", 0.0))
                         prices[coin] = {
                             "usd": usd_price,
-                            "try": round(usd_price * 34.5, 2)
+                            "try": round(usd_price * usd_try_rate, 2)
                         }
     except Exception:
         pass

@@ -16,6 +16,19 @@ CURRENT_VERSION = "3.5.4"
 DEFAULT_REPO = "yiitpepek/AegisVault"
 
 
+import re
+
+
+def parse_semver(version_str: str) -> Tuple[int, ...]:
+    """Parses a version string into a comparable tuple of integers (e.g. 'v3.5.4' -> (3, 5, 4))."""
+    clean = re.sub(r"[^\d.]", "", version_str.lstrip("v"))
+    parts = []
+    for p in clean.split("."):
+        if p.isdigit():
+            parts.append(int(p))
+    return tuple(parts) if parts else (0,)
+
+
 def open_github_releases_page(repo_slug: str = DEFAULT_REPO):
     """Opens the GitHub Releases creation/view page in the default web browser."""
     webbrowser.open(f"https://github.com/{repo_slug}/releases")
@@ -47,7 +60,7 @@ def check_for_github_update(repo_slug: str = DEFAULT_REPO) -> Tuple[bool, str, s
                         download_url = asset.get("browser_download_url", "")
                         break
 
-                if tag_name and tag_name > CURRENT_VERSION and download_url:
+                if tag_name and parse_semver(tag_name) > parse_semver(CURRENT_VERSION) and download_url:
                     return True, tag_name, download_url, body
                 return False, tag_name or CURRENT_VERSION, "", f"En güncel sürümü kullanıyorsunuz (v{CURRENT_VERSION})."
     except urllib.error.HTTPError as e:
@@ -76,14 +89,22 @@ def apply_executable_update(download_url: str) -> bool:
         with urllib.request.urlopen(req, timeout=15.0) as resp, open(temp_exe, "wb") as f:
             f.write(resp.read())
 
+        # Determine target running executable name and path
+        if getattr(sys, 'frozen', False):
+            target_exe = sys.executable
+        else:
+            target_exe = os.path.abspath("AegisVault.exe")
+
+        target_name = os.path.basename(target_exe)
+
         # On Windows, replace the active executable using a background launcher script
-        batch_script = """@echo off
+        batch_script = f"""@echo off
 timeout /t 2 /nobreak > nul
-move /y AegisVault_update.exe AegisVault.exe
-start AegisVault.exe
+move /y "{temp_exe}" "{target_name}"
+start "" "{target_name}"
 del "%~f0"
 """
-        with open("update_installer.bat", "w") as f:
+        with open("update_installer.bat", "w", encoding="ascii") as f:
             f.write(batch_script)
 
         subprocess.Popen(["cmd.exe", "/c", "update_installer.bat"], creationflags=subprocess.CREATE_NO_WINDOW)

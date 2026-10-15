@@ -43,14 +43,24 @@ def generate_airgap_qr(plaintext: str, passkey: Optional[str] = None) -> Tuple[I
     return img, token
 
 
+import numpy as np
+
+
 def decode_airgap_image(image_path: str) -> str:
     """
     Decodes an image containing a QR code using OpenCV and returns the raw decoded token.
+    Supports non-ASCII and Unicode file paths on Windows.
     """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
 
-    cv_img = cv2.imread(image_path)
+    # Use numpy.fromfile + cv2.imdecode for Windows Unicode file path resilience
+    try:
+        file_bytes = np.fromfile(image_path, dtype=np.uint8)
+        cv_img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    except Exception:
+        cv_img = cv2.imread(image_path)
+
     if cv_img is None:
         raise ValueError("Could not read image file or unsupported format.")
 

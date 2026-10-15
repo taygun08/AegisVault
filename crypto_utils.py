@@ -115,7 +115,10 @@ def shamir_combine(shares: List[str]) -> str:
             val = (val + yi * lagrange) % PRIME_257
         result_bytes.append(val)
 
-    return bytes(result_bytes).decode("utf-8")
+    try:
+        return bytes(result_bytes).decode("utf-8")
+    except UnicodeDecodeError:
+        raise ValueError("Decoded data is not valid UTF-8. Shares may be incorrect, corrupted, or below the required threshold.")
 
 
 def validate_bip39_seed(phrase: str) -> dict:

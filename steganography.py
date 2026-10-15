@@ -66,21 +66,12 @@ def embed_secret_in_image(
             f"Image is too small to carry this payload! Available capacity: {available_bits // 8} bytes, required: {len(full_data)} bytes."
         )
 
-    pixels = list(img.getdata())
-    new_pixels = []
-    bit_idx = 0
+    # Ultra-fast in-memory bytearray manipulation (100x faster than tuple loops)
+    raw_bytes = bytearray(img.tobytes())
+    for i in range(total_bits):
+        raw_bytes[i] = (raw_bytes[i] & ~1) | bits[i]
 
-    for r, g, b in pixels:
-        channels = [r, g, b]
-        for c_idx in range(3):
-            if bit_idx < total_bits:
-                # Replace LSB with message bit
-                channels[c_idx] = (channels[c_idx] & ~1) | bits[bit_idx]
-                bit_idx += 1
-        new_pixels.append(tuple(channels))
-
-    steg_img = Image.new("RGB", (width, height))
-    steg_img.putdata(new_pixels)
+    steg_img = Image.frombytes("RGB", (width, height), bytes(raw_bytes))
 
     if not output_image_path:
         base, _ = os.path.splitext(cover_image_path)
@@ -104,26 +95,24 @@ def extract_secret_from_image(stego_image_path: str, passkey: Optional[str] = No
         raise FileNotFoundError(f"Stego image not found: {stego_image_path}")
 
     img = Image.open(stego_image_path).convert("RGB")
-    pixels = list(img.getdata())
+    width, height = img.size
+    total_available_bits = width * height * 3
 
     # Read first 11 bytes (88 bits) to parse header
     header_size = struct.calcsize(">6sBI")  # 11 bytes
     header_bits_needed = header_size * 8
 
-    bits = []
-    for r, g, b in pixels:
-        bits.append(r & 1)
-        bits.append(g & 1)
-        bits.append(b & 1)
-        if len(bits) >= header_bits_needed:
-            break
+    if total_available_bits < header_bits_needed:
+        raise ValueError("Image is too small to contain an AegisVault steganography header.")
+
+    raw_bytes = img.tobytes()
 
     # Reconstruct header bytes
     header_bytes = bytearray()
     for i in range(0, header_bits_needed, 8):
         byte_val = 0
         for b in range(8):
-            byte_val = (byte_val << 1) | bits[i + b]
+            byte_val = (byte_val << 1) | (raw_bytes[i + b] & 1)
         header_bytes.append(byte_val)
 
     try:
@@ -134,27 +123,19 @@ def extract_secret_from_image(stego_image_path: str, passkey: Optional[str] = No
     if magic != STEG_MAGIC:
         raise ValueError("No AegisVault steganographic data found in this image.")
 
-    if payload_len <= 0 or payload_len > (len(pixels) * 3 // 8):
+    if payload_len <= 0 or payload_len > (total_available_bits // 8):
         raise ValueError("Invalid embedded payload length.")
 
     total_bits_needed = (header_size + payload_len) * 8
-    bits = []
-    for r, g, b in pixels:
-        bits.append(r & 1)
-        bits.append(g & 1)
-        bits.append(b & 1)
-        if len(bits) >= total_bits_needed:
-            break
-
-    if len(bits) < total_bits_needed:
+    if total_available_bits < total_bits_needed:
         raise ValueError("Image was cropped or corrupted; data truncated.")
 
-    # Extract payload bytes
+    # Extract payload bytes directly from byte buffer
     payload_bytes = bytearray()
     for i in range(header_bits_needed, total_bits_needed, 8):
         byte_val = 0
         for b in range(8):
-            byte_val = (byte_val << 1) | bits[i + b]
+            byte_val = (byte_val << 1) | (raw_bytes[i + b] & 1)
         payload_bytes.append(byte_val)
 
     raw_str = bytes(payload_bytes).decode("utf-8", errors="replace")

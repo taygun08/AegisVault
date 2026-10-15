@@ -184,7 +184,7 @@ class CryptographicAuditTrail:
 # =============================================================================
 # 3. EMERGENCY CRYPTOGRAPHIC ZEROIZATION (DoD 5220.22-M)
 # =============================================================================
-def emergency_zeroize_vault(profile_name: str = "Varsayilan") -> bool:
+def emergency_zeroize_vault(profile_name: str = "Varsayılan") -> bool:
     """
     Overwrites vault files and key sectors with CSPRNG random bytes followed by
     zero bytes according to DoD 5220.22-M sanitization standards.
@@ -195,6 +195,15 @@ def emergency_zeroize_vault(profile_name: str = "Varsayilan") -> bool:
         f"profiles/{profile_name}.mvat",
         f"profiles/{profile_name}_decoy.mvat",
     ]
+    try:
+        import vault_storage
+        v_f, d_f = vault_storage.get_profile_files(profile_name)
+        if v_f not in target_files:
+            target_files.append(v_f)
+        if d_f not in target_files:
+            target_files.append(d_f)
+    except Exception:
+        pass
 
     for path in target_files:
         if os.path.exists(path):

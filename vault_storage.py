@@ -178,9 +178,12 @@ def save_vault(password: str, vault_data: Dict[str, Any], target_file: Optional[
     with open(temp_file, "w", encoding="utf-8") as f:
         f.write(armored)
 
-    if os.path.exists(target_file):
-        os.remove(target_file)
-    os.rename(temp_file, target_file)
+    try:
+        os.replace(temp_file, target_file)
+    except OSError:
+        if os.path.exists(target_file):
+            os.remove(target_file)
+        os.rename(temp_file, target_file)
 
 
 def unlock_vault(password: str, profile_name: str = "Varsayılan") -> Tuple[Dict[str, Any], bool, str]:

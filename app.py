@@ -34,6 +34,12 @@ import military_audit
 import steganography
 from military_vault import VaultSecurityError
 
+# Ensure consistent working directory regardless of how the application is launched
+if getattr(sys, 'frozen', False):
+    os.chdir(os.path.dirname(os.path.abspath(sys.executable)))
+else:
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
@@ -103,6 +109,8 @@ class AegisVaultApp(ctk.CTk):
         def worker():
             try:
                 self.live_prices = crypto_portfolio.fetch_live_prices()
+                if self.current_tab == "portfolio" and hasattr(self, "main_content"):
+                    self.after(0, self.render_active_tab)
             except Exception:
                 pass
         threading.Thread(target=worker, daemon=True).start()
@@ -1227,8 +1235,15 @@ class AegisVaultApp(ctk.CTk):
     def _on_p2p_status_update(self, text: str):
         """Global callback when P2P connection status updates."""
         self.p2p_status_text = text
-        if self.current_tab == "p2p_chat" and hasattr(self, "p2p_status_lbl") and self.p2p_status_lbl.winfo_exists():
-            self.after(0, lambda: self.p2p_status_lbl.configure(text=text))
+        if self.current_tab == "p2p_chat":
+            if hasattr(self, "p2p_status_lbl") and self.p2p_status_lbl.winfo_exists():
+                self.after(0, lambda: self.p2p_status_lbl.configure(text=text))
+            if hasattr(self, "p2p_conn_btn") and self.p2p_conn_btn.winfo_exists():
+                is_conn = bool(self.p2p_session and self.p2p_session.is_connected)
+                btn_txt = get_text("btn_chat_disconnect") if is_conn else get_text("btn_chat_connect")
+                btn_fg = "#dc2626" if is_conn else "#059669"
+                btn_hov = "#b91c1c" if is_conn else "#047857"
+                self.after(0, lambda: self.p2p_conn_btn.configure(text=btn_txt, fg_color=btn_fg, hover_color=btn_hov))
 
     def _render_single_p2p_bubble(self, record: dict):
         """Renders an individual chat bubble into the active messages box."""
@@ -1409,6 +1424,7 @@ class AegisVaultApp(ctk.CTk):
         btn_hov = "#b91c1c" if is_conn else "#047857"
         conn_btn = ctk.CTkButton(ctrl_row1, text=btn_txt, fg_color=btn_fg, hover_color=btn_hov, width=180, height=32, command=toggle_connect)
         conn_btn.pack(side="left", padx=6)
+        self.p2p_conn_btn = conn_btn
 
         # Re-attach live session callbacks to current window
         if self.p2p_session:
