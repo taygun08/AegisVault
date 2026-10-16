@@ -395,11 +395,19 @@ class AegisVaultApp(ctk.CTk):
             self.is_decoy = is_decoy
             self.last_activity_time = time.time()
 
+            # Record identical audit event for both real and decoy vaults to preserve plausible deniability
+            military_audit.CryptographicAuditTrail.record_event(
+                "VAULT_UNLOCK", prof, "AES-256-GCM Vault session authenticated and unlocked.", "INFO"
+            )
+
             saved_lang = data.get("settings", {}).get("language", i18n.CURRENT_LANG)
             i18n.set_language(saved_lang)
 
             self.show_dashboard()
         except VaultSecurityError as e:
+            military_audit.CryptographicAuditTrail.record_event(
+                "AUTH_FAILURE", prof, "Failed authentication attempt (Invalid key or rate-limited).", "WARN"
+            )
             messagebox.showerror("Access Denied", str(e))
         except Exception as e:
             messagebox.showerror("Error", f"Unlock error: {e}")
@@ -594,13 +602,28 @@ class AegisVaultApp(ctk.CTk):
             self._render_guide_view(tab_container)
 
     def lock_vault(self, reason=None):
-        """Locks the vault, terminates live chat session, wipes state, and returns to unlock screen."""
+        """Locks the vault, terminates live chat session, scrubs clipboard & RAM state, and returns to unlock screen."""
+        if not self.master_password and not self.vault_data:
+            return
+
         if hasattr(self, "p2p_session") and self.p2p_session:
             try:
                 self.p2p_session.close()
             except Exception:
                 pass
             self.p2p_session = None
+
+        try:
+            self.clipboard_clear()
+        except Exception:
+            pass
+
+        military_audit.CryptographicAuditTrail.record_event(
+            "VAULT_LOCK",
+            self.selected_profile or "System",
+            f"Vault session locked and session keys zeroized ({reason or 'Manual Lock'}).",
+            "INFO"
+        )
 
         self.p2p_message_history.clear()
         self.master_password = None
@@ -614,15 +637,22 @@ class AegisVaultApp(ctk.CTk):
             messagebox.showinfo("Vault Locked", reason)
 
     def _check_github_updates_ui(self):
-        """Prompts update check and installation dialog."""
-        has_up, latest_ver, down_url, notes = updater.check_for_github_update()
-        if has_up:
-            if messagebox.askyesno("Update Available", f"AegisVault v{latest_ver} is available!\n\n{notes}\n\nDownload and install now?"):
-                threading.Thread(target=lambda: updater.apply_executable_update(down_url), daemon=True).start()
-                messagebox.showinfo("Downloading", "Update is downloading, application will restart automatically.")
-        else:
-            if messagebox.askyesno("Update Status", f"{notes}\n\nGitHub Releases sayfasını tarayıcıda açmak ister misiniz?"):
-                updater.open_github_releases_page()
+        """Asynchronously queries GitHub Releases API without blocking the GUI thread."""
+        def worker():
+            has_up, latest_ver, down_url, notes = updater.check_for_github_update()
+
+            def show_dialog():
+                if has_up:
+                    if messagebox.askyesno("Update Available", f"AegisVault v{latest_ver} is available!\n\n{notes}\n\nDownload and install now?"):
+                        threading.Thread(target=lambda: updater.apply_executable_update(down_url), daemon=True).start()
+                        messagebox.showinfo("Downloading", "Update is downloading, application will restart automatically.")
+                else:
+                    if messagebox.askyesno("Update Status", f"{notes}\n\nGitHub Releases sayfasını tarayıcıda açmak ister misiniz?"):
+                        updater.open_github_releases_page()
+
+            self.after(0, show_dialog)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     # =========================================================================
     # 3. VAULT VIEW & ENCRYPTED FILE LOCKER
@@ -944,9 +974,23 @@ class AegisVaultApp(ctk.CTk):
         self._render_vault_cards()
 
     def _copy_to_clipboard(self, text: str):
+        """Copies secret to clipboard and schedules automatic zeroization after 30 seconds."""
         self.clipboard_clear()
         self.clipboard_append(text)
-        messagebox.showinfo(get_text("copied_alert"), text[:40] + ("..." if len(text) > 40 else ""))
+        messagebox.showinfo(
+            get_text("copied_alert"),
+            f"{text[:40]}{'...' if len(text) > 40 else ''}\n\n⏱️ [Auto-Zeroize: Clipboard will clear in 30s]"
+        )
+
+        def auto_scrub_clipboard(expected_val=text):
+            try:
+                current = self.clipboard_get()
+                if current == expected_val:
+                    self.clipboard_clear()
+            except Exception:
+                pass
+
+        self.after(30000, auto_scrub_clipboard)
 
     def _delete_secret(self, item_id: str, title: str):
         msg = get_text("delete_confirm", title=title)
@@ -1202,15 +1246,27 @@ class AegisVaultApp(ctk.CTk):
         self.render_active_tab()
 
     def _refresh_portfolio_and_balances(self):
-        self.live_prices = crypto_portfolio.fetch_live_prices()
-        for item in self.vault_data.get("portfolio", []):
-            if item.get("coin") == "BTC":
-                live_b = crypto_portfolio.fetch_live_btc_balance(item.get("address", ""))
-                if live_b > 0:
-                    item["amount"] = live_b
-        vault_storage.save_vault(self.effective_password or self.master_password, self.vault_data, is_decoy=self.is_decoy)
-        self.render_active_tab()
-        messagebox.showinfo("Updated", get_text("portfolio_refreshed_alert"))
+        """Asynchronously refreshes live market prices and on-chain BTC balances without freezing GUI."""
+        def worker():
+            prices = crypto_portfolio.fetch_live_prices()
+            self.live_prices = prices
+            if self.vault_data:
+                for item in self.vault_data.get("portfolio", []):
+                    if item.get("coin") == "BTC":
+                        live_b = crypto_portfolio.fetch_live_btc_balance(item.get("address", ""))
+                        if live_b > 0:
+                            item["amount"] = live_b
+                if self.master_password:
+                    vault_storage.save_vault(self.effective_password or self.master_password, self.vault_data, is_decoy=self.is_decoy)
+
+            def on_done():
+                if self.master_password:
+                    self.render_active_tab()
+                    messagebox.showinfo("Updated", get_text("portfolio_refreshed_alert"))
+
+            self.after(0, on_done)
+
+        threading.Thread(target=worker, daemon=True).start()
 
     # =========================================================================
     # 5. PERSISTENT LIVE P2P ENCRYPTED CHAT (SURVIVES TAB SWITCHES)

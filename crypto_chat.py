@@ -7,6 +7,8 @@ Capabilities:
 """
 
 import os
+import time
+import secrets
 import base64
 import json
 from datetime import datetime
@@ -19,17 +21,19 @@ MSG_PREFIX = "AEGIS-MSG-v1"
 def encrypt_message(plaintext: str, shared_passkey: str) -> str:
     """
     Encrypts a plaintext message using AES-256-GCM and a shared passkey.
-    The resulting armored string can be copied via any insecure transport channel.
+    Includes a 128-bit CSPRNG nonce and epoch timestamp for anti-replay defense.
     """
     if not plaintext.strip():
         raise ValueError("Message body cannot be empty.")
     if not shared_passkey.strip():
         raise ValueError("Shared passkey cannot be empty.")
 
-    # Envelope structure containing message content and ISO timestamp
+    # Envelope structure containing message content, ISO timestamp, and anti-replay nonce
     envelope = {
         "text": plaintext.strip(),
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "nonce": secrets.token_hex(16),
+        "epoch": time.time()
     }
     raw_payload = json.dumps(envelope, ensure_ascii=False)
     encrypted_armored = MilitaryVault.encrypt(raw_payload, shared_passkey)

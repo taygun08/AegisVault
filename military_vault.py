@@ -182,11 +182,14 @@ class MilitaryVault:
         if kdf_type != cls.KDF_SCRYPT:
             raise VaultSecurityError("Unsupported KDF algorithm identifier.")
 
-        # Parameter sanity limits to prevent DoS attacks
-        if log_n > 22 or log_n < 10:
+        # Parameter sanity limits to prevent CPU/Memory Exhaustion (OOM DoS) attacks
+        if log_n > 20 or log_n < 10 or r < 1 or r > 32 or p < 1 or p > 16:
             raise VaultSecurityError("scrypt parameters outside security thresholds.")
 
         n = 1 << log_n
+        if (128 * n * r) > (512 * 1024 * 1024):  # Cap maximum KDF RAM at 512 MB
+            raise VaultSecurityError("scrypt memory allocation exceeds safe threshold.")
+
         password_bytes = bytearray(password.encode("utf-8"))
 
         try:

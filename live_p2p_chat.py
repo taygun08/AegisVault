@@ -10,6 +10,7 @@ Key Capabilities:
 import time
 import uuid
 import threading
+from collections import deque
 from datetime import datetime
 from typing import Callable, Optional
 import paho.mqtt.client as mqtt
@@ -20,7 +21,7 @@ DEFAULT_PORT = 1883
 
 
 class GlobalEncryptedChatSession:
-    """Worldwide end-to-end encrypted messaging session."""
+    """Worldwide end-to-end encrypted messaging session with anti-replay defense."""
 
     def __init__(self, username: str, room_name: str, room_key: str, on_message: Callable, on_status: Callable):
         self.username = username.strip() or "Anonymous"
@@ -29,6 +30,7 @@ class GlobalEncryptedChatSession:
         self.on_message = on_message
         self.on_status = on_status
         self.session_id = uuid.uuid4().hex[:8]
+        self._seen_nonces = deque(maxlen=512)
 
         # Unique topic path per tactical room
         self.topic = f"aegisvault/v3/rooms/{self.room_name}"
@@ -66,11 +68,23 @@ class GlobalEncryptedChatSession:
         self.on_status("🔴 Disconnected from chat room.")
 
     def _on_mqtt_message(self, client, userdata, msg):
-        """Decrypts incoming cryptographic payload envelope."""
+        """Decrypts incoming cryptographic payload envelope and enforces anti-replay checks."""
         try:
             token = msg.payload.decode("utf-8").strip()
             # Decrypt AES-256-GCM authenticated payload
             payload = crypto_chat.decrypt_message(token, self.room_key)
+
+            # Anti-replay verification (128-bit nonce deduplication + 10-minute freshness window)
+            msg_nonce = payload.get("nonce")
+            if msg_nonce:
+                if msg_nonce in self._seen_nonces:
+                    return  # Drop replayed packet
+                self._seen_nonces.append(msg_nonce)
+
+            msg_epoch = payload.get("epoch")
+            if isinstance(msg_epoch, (int, float)) and abs(time.time() - msg_epoch) > 600:
+                return  # Drop stale packet outside 10-minute replay window
+
             full_text = payload.get("text", "")
             ts = payload.get("timestamp", datetime.now().strftime("%H:%M:%S"))
 

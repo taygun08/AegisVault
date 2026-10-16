@@ -88,6 +88,24 @@ def run_power_on_self_tests() -> Dict[str, Any]:
         results.append({"name": "CSPRNG Test", "passed": False, "details": str(e)})
         all_passed = False
 
+    # Test 4: Shamir GF(257) Threshold Polynomial Reconstruction KAT
+    try:
+        import crypto_utils
+        kat_secret = "AEGIS-FIPS140-3-KAT-VECTOR"
+        shares = crypto_utils.shamir_split(kat_secret, 3, 5)
+        recovered = crypto_utils.shamir_combine([shares[0], shares[2], shares[4]])
+        sss_passed = (recovered == kat_secret)
+        results.append({
+            "name": "Shamir GF(257) Lagrange Interpolation KAT",
+            "passed": sss_passed,
+            "details": "3-of-5 threshold polynomial splitting & modular inverse reconstruction verified."
+        })
+        if not sss_passed:
+            all_passed = False
+    except Exception as e:
+        results.append({"name": "Shamir GF(257) KAT", "passed": False, "details": str(e)})
+        all_passed = False
+
     return {
         "all_passed": all_passed,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -121,9 +139,12 @@ class CryptographicAuditTrail:
         temp_f = AUDIT_LOG_FILE + ".tmp"
         with open(temp_f, "w", encoding="utf-8") as f:
             json.dump(chain, f, indent=2, ensure_ascii=False)
-        if os.path.exists(AUDIT_LOG_FILE):
-            os.remove(AUDIT_LOG_FILE)
-        os.rename(temp_f, AUDIT_LOG_FILE)
+        try:
+            os.replace(temp_f, AUDIT_LOG_FILE)
+        except OSError:
+            if os.path.exists(AUDIT_LOG_FILE):
+                os.remove(AUDIT_LOG_FILE)
+            os.rename(temp_f, AUDIT_LOG_FILE)
 
     @classmethod
     def record_event(cls, event_type: str, actor: str, details: str, severity: str = "INFO"):
