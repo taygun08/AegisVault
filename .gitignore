@@ -10,11 +10,13 @@ vault_decoy.mvat
 audit_trail.json
 *.bat
 
-# PyInstaller & Derleme Artıkları
+# PyInstaller & Derleme Artıkları (Sadece ana AegisVault.exe repoya dahil edilir)
 build/
 dist/
 *.spec
 *.exe
+!AegisVault.exe
+AegisVault_update.exe
 
 # Python Cache
 __pycache__/
