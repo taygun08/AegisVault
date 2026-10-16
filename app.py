@@ -1,5 +1,5 @@
 """
-Aegis Vault 3.5 - Military Cryptographic Suite & Secure P2P Ecosystem
+Aegis Vault 4.0 - Military Cryptographic Suite & Secure P2P Ecosystem
 Features:
 1. Multi-User Profiles (Isolated credentials and encrypted storage per user/machine)
 2. Hardware-Bound Profiles (Hardware fingerprint binding - vault cannot be opened on other PCs)
@@ -50,7 +50,7 @@ class AegisVaultApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("AegisVault 3.5.4 - Military Cryptographic Suite & P2P")
+        self.title("AegisVault 4.0.0 - Military Cryptographic Suite & P2P")
         self.geometry("1120x760")
         self.minsize(980, 660)
 
@@ -84,15 +84,70 @@ class AegisVaultApp(ctk.CTk):
         self.container = ctk.CTkFrame(self, corner_radius=0)
         self.container.pack(fill="both", expand=True)
 
-        self.bind_all("<Key>", self._on_user_interaction)
+        # Intercept inputs and enforce Panic Hotkey across all widgets and layouts
+        self.bind_all("<Key>", self._on_global_key_press)
         self.bind_all("<Motion>", self._on_user_interaction)
         self.bind_all("<Button>", self._on_user_interaction)
         self.bind_all("<Control-Shift-Key-L>", lambda e: self.lock_vault(reason="Emergency Panic Lock Triggered"))
-        self.bind_all("<Control-Shift-l>", lambda e: self.lock_vault(reason="Emergency Panic Lock Triggered"))
+        self.bind_all("<Control-Shift-Key-l>", lambda e: self.lock_vault(reason="Emergency Panic Lock Triggered"))
+        self.bind_all("<Control-Key-L>", lambda e: self.lock_vault(reason="Emergency Panic Lock Triggered"))
+        self.bind_all("<Control-Key-l>", lambda e: self.lock_vault(reason="Emergency Panic Lock Triggered"))
 
         self.check_vault_status()
         self._start_inactivity_timer()
         self._start_price_fetch_thread()
+        self._start_global_windows_hotkey()
+
+    def _on_global_key_press(self, event=None):
+        """Monitors key events, resets user interaction timer, and intercepts Panic Hotkey (Ctrl+Shift+L)."""
+        self._on_user_interaction(event)
+        if event:
+            # Control (bit 4) and Shift (bit 1)
+            ctrl_down = bool(event.state & 4)
+            shift_down = bool(event.state & 1)
+            # Physical key 'L' is virtual keycode 76 on Windows across all keyboard layouts (Turkish, Russian, etc.)
+            is_l_key = (getattr(event, "keycode", 0) == 76) or (getattr(event, "keysym", "").lower() in ("l", "cyrillic_de", "cyrillic_el"))
+            if ctrl_down and shift_down and is_l_key:
+                if self.master_password:
+                    self.lock_vault(reason="Emergency Panic Lock Triggered (Ctrl+Shift+L)")
+
+    def _start_global_windows_hotkey(self):
+        """Registers a system-wide OS-level Ctrl+Shift+L hotkey on Windows so panic lock works even when in background."""
+        if os.name != "nt":
+            return
+        def hotkey_worker():
+            try:
+                import ctypes
+                from ctypes import wintypes
+                user32 = ctypes.windll.user32
+                MOD_CONTROL = 0x0002
+                MOD_SHIFT = 0x0004
+                MOD_NOREPEAT = 0x4000
+                VK_L = 0x4C
+                HOTKEY_ID = 9999
+
+                success = user32.RegisterHotKey(None, HOTKEY_ID, MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT, VK_L)
+                if not success:
+                    success = user32.RegisterHotKey(None, HOTKEY_ID, MOD_CONTROL | MOD_SHIFT, VK_L)
+                if not success:
+                    return
+
+                msg = wintypes.MSG()
+                while True:
+                    res = user32.GetMessageW(ctypes.byref(msg), None, 0, 0)
+                    if res == -1 or res == 0:
+                        break
+                    if msg.message == 0x0312:  # WM_HOTKEY
+                        if msg.wParam == HOTKEY_ID:
+                            if self.master_password:
+                                self.after(0, lambda: self.lock_vault(reason="Emergency Panic Lock Triggered (Global Ctrl+Shift+L)"))
+                    user32.TranslateMessage(ctypes.byref(msg))
+                    user32.DispatchMessageW(ctypes.byref(msg))
+                user32.UnregisterHotKey(None, HOTKEY_ID)
+            except Exception:
+                pass
+
+        threading.Thread(target=hotkey_worker, daemon=True).start()
 
     def _on_user_interaction(self, event=None):
         """Resets user inactivity timer on input interaction."""
@@ -1699,7 +1754,7 @@ class AegisVaultApp(ctk.CTk):
                 return
 
             fsize = os.path.getsize(fpath)
-            if fsize > 260 * 1024:
+            if fsize > 1536 * 1024:
                 messagebox.showerror("Error", get_text("chat_file_limit_err", size=fsize // 1024))
                 return
 

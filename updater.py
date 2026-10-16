@@ -16,7 +16,7 @@ import subprocess
 import webbrowser
 from typing import Tuple, Optional, Dict, Any
 
-CURRENT_VERSION = "3.5.4"
+CURRENT_VERSION = "4.0.0"
 DEFAULT_REPO = "yiitpepek/AegisVault"
 ALLOWED_DOWNLOAD_HOSTS = {
     "github.com",
@@ -26,7 +26,7 @@ ALLOWED_DOWNLOAD_HOSTS = {
 
 
 def parse_semver(version_str: str) -> Tuple[int, ...]:
-    """Parses a version string into a comparable tuple of integers (e.g. 'v3.5.4' -> (3, 5, 4))."""
+    """Parses a version string into a comparable tuple of integers (e.g. 'v4.0.0' -> (4, 0, 0))."""
     clean = re.sub(r"[^\d.]", "", version_str.lstrip("v"))
     parts = []
     for p in clean.split("."):

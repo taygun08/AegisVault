@@ -1,5 +1,6 @@
-# 🛡️ AegisVault v3.5.4 — Military-Grade Cold Storage, Air-Gap & P2P Cryptographic Suite
+# 🛡️ AegisVault v4.0.0 — Military-Grade Cold Storage, Air-Gap & P2P Cryptographic Suite
 
+[![Version](https://img.shields.io/badge/Version-4.0.0-blue?style=for-the-badge)](https://github.com/yiitpepek/AegisVault/releases)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Cipher](https://img.shields.io/badge/Cipher-AES--256--GCM%20(NIST%20SP%20800--38D)-10b981?style=for-the-badge)](https://csrc.nist.gov/publications/detail/sp/800-38d/final)
 [![KDF](https://img.shields.io/badge/KDF-scrypt%20(RFC%207914%20%2F%20BIP--38)-f59e0b?style=for-the-badge)](https://datatracker.ietf.org/doc/html/rfc7914)
@@ -81,7 +82,7 @@ flowchart TD
 * **Zero-Knowledge Blinded MQTT Topics:** Room names are never transmitted in plaintext to the relay broker. Instead, peers derive a blinded topic path via `HMAC-SHA256(room_key, "AEGIS-ZK-ROOM-v3:" + room_name)`, preventing metadata harvesting or topic flooding by outsiders.
 * **⚛️ Post-Quantum Hybrid KEM Ratcheting (`X25519 + Ring-LWE`):** One-click **PQ-KEM Quantum Handshake** performs an ephemeral key exchange combining classical **X25519 ECDH** with lattice-based **Ring-LWE over $\mathbb{Z}_{3329}[X]/(X^{256}+1)$** (NIST FIPS 203 ML-KEM prime $q=3329$) and **HKDF-SHA512**, ratcheting the session key against *Harvest Now, Decrypt Later* quantum adversaries.
 * **Cryptographic Anti-Replay Defense:** Each message envelope embeds a 128-bit CSPRNG `nonce` and Unix `epoch`. Peers enforce a 512-entry sliding-window deduplication cache and a $\pm 600\text{s}$ freshness window, silently dropping replayed ciphertexts.
-* **⏱️ 30-Second Burn-After-Reading & 📎 Encrypted File Drop:** Ephemeral tactical messages (`[BURNT-30]`) self-destruct after 30 seconds, while `[FILE-DROP]` transfers end-to-end encrypted binary files with strict path-traversal sanitization.
+* **⏱️ 30-Second Burn-After-Reading & 📎 Encrypted File Drop:** Ephemeral tactical messages (`[BURNT-30]`) self-destruct after 30 seconds, while `[FILE-DROP]` transfers end-to-end encrypted binary files up to 1.5 MB (1536 KB) with strict path-traversal sanitization and HiveMQ broker packet optimization.
 
 ### 5. 📲 Air-Gapped Optical QR & LSB Image Steganography ([`airgap_crypto.py`](airgap_crypto.py), [`steganography.py`](steganography.py))
 * **Optical QR Transceiver:** Encodes AES-256-GCM ciphertexts into high-density optical QR matrices for transmission across physically air-gapped machines (no Wi-Fi, Bluetooth, or USB). Decodes incoming QR frames via OpenCV (`cv2.QRCodeDetector`) with Unicode-safe `numpy.fromfile` I/O.
@@ -107,7 +108,7 @@ flowchart TD
   * When triggered, automatically executes **3-Pass DoD 5220.22-M sanitization** (`0x00` zeroes, `0xFF` complement, CSPRNG stream + `os.fsync`) and shreds the vault files.
 * **Tamper-Evident Merkle Audit Trail & Panic Controls:**
   * Chains every security event with SHA-256 hashes ($H_i = \text{SHA256}(\text{Index}_i \parallel \text{Timestamp}_i \parallel \text{Event}_i \parallel H_{i-1})$).
-  * **`Ctrl + Shift + L` Global Panic Hotkey** & **30-Second Clipboard Auto-Scrubber** immediately purge secrets from RAM and the OS clipboard.
+  * **`Ctrl + Shift + L` Global OS-Level Panic Hotkey** & **30-Second Clipboard Auto-Scrubber** immediately purge secrets from RAM and the OS clipboard even when minimized or in the background.
 
 ---
 
@@ -196,7 +197,7 @@ Embedded across the first $11 \times 8 = 88$ RGB channel bytes ($b_{\text{new}} 
 | **Offline GPU/ASIC Cracking** | Stolen `.mvat` file + multi-GPU hashcat cluster | `scrypt` (32 MB RAM/guess) + **96-bit Hardware Binding** + **512-bit 2FA USB Keyfile (`.akey`)**. |
 | **Persistent Brute-Force / Seizure** | Repeated offline/online password guessing or prolonged seizure | **Dead-Man's Switch** (7–180d inactivity wipe) + **Scorched-Earth Brute-Force Wipe** (3-pass DoD 5220.22-M). |
 | **Physical Coercion (\$5 Wrench)** | Attacker forces user to unlock vault in person | **Duress Password** opens realistic Decoy Vault with identical UI badges and identical audit trail logs. |
-| **Sudden Physical Intrusion** | Shoulder-surfing or device seizure while unlocked | **`Ctrl+Shift+L` Panic Hotkey** + 120s inactivity auto-lock immediately wipes RAM keys and system clipboard. |
+| **Sudden Physical Intrusion** | Shoulder-surfing or device seizure while unlocked | **`Ctrl+Shift+L` OS-Level Global Panic Hotkey** (`RegisterHotKey` + Tkinter hook) + 120s inactivity auto-lock immediately wipes RAM keys and system clipboard. |
 | **Clipboard Malware / Stealers** | Background spyware monitoring OS clipboard | **30-Second Ephemeral Clipboard Scrubber** automatically purges copied secrets after 30s or upon vault lock. |
 | **Network MITM, Replay & Metadata** | Compromised MQTT broker or ISP packet sniffing | **Zero-Knowledge HMAC-Blinded Topics** + AES-256-GCM + 128-bit CSPRNG `nonce` replay cache. |
 | **Supply-Chain / RCE / Backdoors** | Malicious update redirection or code injection | **HTTPS Domain Allowlist + PE `MZ` & SHA-256 Check** + **Boot-Time AST Anti-Backdoor & `SHA3-256` Shield**. |

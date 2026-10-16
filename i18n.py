@@ -12,7 +12,7 @@ LANGUAGES = {
 TRANSLATIONS = {
     "tr": {
         # App Header & Navigation
-        "app_title": "AegisVault 3.5.4 - Askeri Düzey Güvenlik & Kripto Ekosistemi",
+        "app_title": "AegisVault 4.0.0 - Askeri Düzey Güvenlik & Kripto Ekosistemi",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Destekli Güvenlik Kasası",
         "status_active": "● AES-256-GCM | AKTİF",
         "status_decoy": "● AES-256-GCM | AKTİF",
@@ -140,8 +140,8 @@ TRANSLATIONS = {
         "chat_alert_invite_copied_title": "Kopyalandı",
         "chat_alert_invite_copied_msg": "Oda davet bilgileri panoya kopyalandı!\nArkadaşınıza gönderip aynı bilgilerle odaya bağlanmasını sağlayabilirsiniz.",
         "chat_alert_not_connected": "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.",
-        "chat_file_dialog_title": "Şifrelenip Gönderilecek Dosyayı Seçin (Maks. 250 KB)",
-        "chat_file_limit_err": "Taktik anlık transfer için dosya boyutu maksimum 250 KB olmalıdır!\nSeçilen dosya: {size} KB.\n(Daha büyük dosyalar için lütfen 'Şifreli Dosya Kasası'nı kullanın).",
+        "chat_file_dialog_title": "Şifrelenip Gönderilecek Dosyayı Seçin (Maks. 1.5 MB)",
+        "chat_file_limit_err": "Taktik anlık transfer için dosya boyutu maksimum 1.5 MB (1536 KB) olmalıdır!\nSeçilen dosya: {size} KB.\n(Daha büyük dosyalar için lütfen Kasa içindeki 'Dosya Şifreleme' [15 MB] özelliğini kullanın).",
         "chat_file_sent": "'{fname}' dosyası AES-256-GCM ile zırhlanarak karşı tarafa başarıyla iletildi!",
         "chat_file_rx_hdr": "{sender} ({ts}) 📎 [ŞİFRELİ DOSYA TRANSFERİ]",
         "chat_file_tx_hdr": "Siz ({ts}) 📎 [ŞİFRELİ DOSYA GÖNDERİLDİ]",
@@ -231,7 +231,7 @@ TRANSLATIONS = {
     
     "en": {
         # App Header & Navigation
-        "app_title": "AegisVault 3.5.4 - Military Security & Crypto Suite",
+        "app_title": "AegisVault 4.0.0 - Military Security & Crypto Suite",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Encrypted Vault",
         "status_active": "● AES-256-GCM | ACTIVE",
         "status_decoy": "● AES-256-GCM | ACTIVE",
@@ -359,8 +359,8 @@ TRANSLATIONS = {
         "chat_alert_invite_copied_title": "Copied",
         "chat_alert_invite_copied_msg": "Room invite credentials copied to clipboard!\nShare it with your peer to connect to the same room.",
         "chat_alert_not_connected": "Not connected to any room yet! Please click 'Connect to Room' first.",
-        "chat_file_dialog_title": "Select File to Encrypt & Send (Max 250 KB)",
-        "chat_file_limit_err": "Tactical instant transfer limit is 250 KB!\nSelected file: {size} KB.\n(For larger files, please use the 'Encrypted File Locker' inside the Vault).",
+        "chat_file_dialog_title": "Select File to Encrypt & Send (Max 1.5 MB)",
+        "chat_file_limit_err": "Tactical instant transfer limit is 1.5 MB (1536 KB)!\nSelected file: {size} KB.\n(For larger files up to 15 MB, please use the 'Encrypted File Locker' inside the Vault).",
         "chat_file_sent": "File '{fname}' encrypted with AES-256-GCM and transmitted successfully!",
         "chat_file_rx_hdr": "{sender} ({ts}) 📎 [ENCRYPTED FILE TRANSFER]",
         "chat_file_tx_hdr": "You ({ts}) 📎 [ENCRYPTED FILE SENT]",
@@ -450,7 +450,7 @@ TRANSLATIONS = {
     
     "ru": {
         # App Header & Navigation
-        "app_title": "AegisVault 3.5.4 - Военная Безопасность и Криптосистема",
+        "app_title": "AegisVault 4.0.0 - Военная Безопасность и Криптосистема",
         "tagline": "Шифрованное хранилище AES-256-GCM + scrypt (BIP-38)",
         "status_active": "● AES-256-GCM | АКТИВНО",
         "status_decoy": "● AES-256-GCM | АКТИВНО",
@@ -578,8 +578,8 @@ TRANSLATIONS = {
         "chat_alert_invite_copied_title": "Скопировано",
         "chat_alert_invite_copied_msg": "Данные комнаты скопированы в буфер обмена!\nПередайте их собеседнику для подключения.",
         "chat_alert_not_connected": "Вы еще не подключены к комнате! Сначала нажмите 'Войти в комнату'.",
-        "chat_file_dialog_title": "Выберите файл для шифрования и отправки (макс. 250 КБ)",
-        "chat_file_limit_err": "Лимит мгновенной отправки 250 КБ!\nВыбранный файл: {size} КБ.\n(Для больших файлов используйте 'Зашифровать файл' в хранилище).",
+        "chat_file_dialog_title": "Выберите файл для шифрования и отправки (макс. 1.5 МБ)",
+        "chat_file_limit_err": "Лимит мгновенной отправки 1.5 МБ (1536 КБ)!\nВыбранный файл: {size} КБ.\n(Для больших файлов до 15 МБ используйте 'Зашифровать файл' в хранилище).",
         "chat_file_sent": "Файл '{fname}' защищен AES-256-GCM и успешно передан!",
         "chat_file_rx_hdr": "{sender} ({ts}) 📎 [ЗАШИФРОВАННЫЙ ФАЙЛ]",
         "chat_file_tx_hdr": "Вы ({ts}) 📎 [ФАЙЛ ОТПРАВЛЕН]",
