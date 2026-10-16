@@ -186,3 +186,214 @@ def calculate_password_entropy(password: str) -> dict:
         "label": label,
         "color": color
     }
+
+
+# =============================================================================
+# 4. POST-QUANTUM HYBRID KEY ENCAPSULATION MECHANISM (PQ-HYBRID KEM)
+#    Combines Classical X25519 ECDH + Ring-LWE over Z_3329[X]/(X^256 + 1)
+#    with HKDF-SHA512 & SHA3-256 Domain Separation (NIST FIPS 203 Inspired)
+# =============================================================================
+import os
+import json
+import base64
+import hashlib
+from cryptography.hazmat.primitives.asymmetric import x25519
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat, PrivateFormat, NoEncryption
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import hashes
+
+LWE_Q = 3329          # NIST FIPS 203 (ML-KEM / Kyber) prime modulus
+LWE_N = 256           # Cyclotomic polynomial ring degree X^256 + 1
+LWE_HALF_Q = 1665     # Round(3329 / 2)
+
+
+def _poly_mul_mod(a: List[int], b: List[int]) -> List[int]:
+    """Multiplies two polynomials in R_q = Z_3329[X] / (X^256 + 1)."""
+    res = [0] * LWE_N
+    for i, ai in enumerate(a):
+        if ai == 0:
+            continue
+        for j, bj in enumerate(b):
+            if bj == 0:
+                continue
+            idx = i + j
+            if idx < LWE_N:
+                res[idx] = (res[idx] + ai * bj) % LWE_Q
+            else:
+                res[idx - LWE_N] = (res[idx - LWE_N] - ai * bj) % LWE_Q
+    return res
+
+
+def _sample_uniform_poly(seed32: bytes) -> List[int]:
+    """Deterministically expands a 32-byte seed into a polynomial in R_3329 via SHAKE-256."""
+    raw = hashlib.shake_256(seed32).digest(LWE_N * 2)
+    return [((raw[2 * i] << 8) | raw[2 * i + 1]) % LWE_Q for i in range(LWE_N)]
+
+
+def _sample_ternary_poly(seed32: bytes, nonce_byte: int) -> List[int]:
+    """Samples a bounded ternary error/secret polynomial with coefficients in {-1, 0, 1}."""
+    raw = hashlib.shake_256(seed32 + bytes([nonce_byte])).digest(LWE_N)
+    # Centered distribution: b0 - b1 in {-1, 0, 1} modulo LWE_Q
+    return [((b & 1) - ((b >> 1) & 1)) % LWE_Q for b in raw]
+
+
+class PQHybridKEM:
+    """
+    Post-Quantum Hybrid Key Encapsulation Engine (X25519 + Ring-LWE-256).
+    Defends against 'Harvest Now, Decrypt Later' quantum adversaries (Shor's & Grover's algorithms).
+    """
+
+    @staticmethod
+    def generate_keypair() -> Tuple[str, str]:
+        """
+        Generates a hybrid (X25519 + Ring-LWE) keypair.
+        Returns: (public_key_armored, private_key_armored)
+        """
+        # 1. Classical X25519 Keypair
+        ecc_priv = x25519.X25519PrivateKey.generate()
+        ecc_pub_bytes = ecc_priv.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        ecc_priv_bytes = ecc_priv.private_bytes(Encoding.Raw, PrivateFormat.Raw, NoEncryption())
+
+        # 2. Post-Quantum Ring-LWE Keypair over Z_3329[X]/(X^256+1)
+        rho = os.urandom(32)
+        sigma = os.urandom(32)
+        a_poly = _sample_uniform_poly(rho)
+        s_poly = _sample_ternary_poly(sigma, 1)
+        e_poly = _sample_ternary_poly(sigma, 2)
+
+        as_poly = _poly_mul_mod(a_poly, s_poly)
+        b_poly = [(as_poly[i] + e_poly[i]) % LWE_Q for i in range(LWE_N)]
+
+        pub_obj = {
+            "alg": "AEGIS-PQ-HYBRID-v1",
+            "ecc_pub": ecc_pub_bytes.hex(),
+            "rho": rho.hex(),
+            "b": b_poly
+        }
+        priv_obj = {
+            "alg": "AEGIS-PQ-HYBRID-v1",
+            "ecc_priv": ecc_priv_bytes.hex(),
+            "ecc_pub": ecc_pub_bytes.hex(),
+            "rho": rho.hex(),
+            "s": s_poly
+        }
+
+        pub_b64 = "AEGIS-PQPK-v1:" + base64.b64encode(json.dumps(pub_obj, separators=(",", ":")).encode()).decode()
+        priv_b64 = "AEGIS-PQSK-v1:" + base64.b64encode(json.dumps(priv_obj, separators=(",", ":")).encode()).decode()
+        return pub_b64, priv_b64
+
+    @staticmethod
+    def encapsulate(public_key_armored: str) -> Tuple[str, str]:
+        """
+        Encapsulates a 256-bit Hybrid Shared Secret against a recipient's PQ-Hybrid public key.
+        Returns: (ciphertext_capsule_armored, shared_secret_hex_64)
+        """
+        clean = public_key_armored.strip()
+        if not clean.startswith("AEGIS-PQPK-v1:"):
+            raise ValueError("Invalid PQ-Hybrid Public Key header.")
+        pub_obj = json.loads(base64.b64decode(clean[len("AEGIS-PQPK-v1:"):]).decode())
+
+        peer_ecc_pub = x25519.X25519PublicKey.from_public_bytes(bytes.fromhex(pub_obj["ecc_pub"]))
+        rho = bytes.fromhex(pub_obj["rho"])
+        b_poly = pub_obj["b"]
+        if len(b_poly) != LWE_N:
+            raise ValueError("Invalid LWE polynomial dimension.")
+
+        # 1. Classical Ephemeral X25519 ECDH
+        eph_ecc_priv = x25519.X25519PrivateKey.generate()
+        eph_ecc_pub_bytes = eph_ecc_priv.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        z_ecc = eph_ecc_priv.exchange(peer_ecc_pub)
+
+        # 2. Ring-LWE Encapsulation of 256-bit quantum entropy seed m
+        m_bytes = os.urandom(32)
+        coin_seed = hashlib.sha3_256(m_bytes + os.urandom(32)).digest()
+
+        a_poly = _sample_uniform_poly(rho)
+        r_poly = _sample_ternary_poly(coin_seed, 1)
+        e1_poly = _sample_ternary_poly(coin_seed, 2)
+        e2_poly = _sample_ternary_poly(coin_seed, 3)
+
+        ar_poly = _poly_mul_mod(a_poly, r_poly)
+        u_poly = [(ar_poly[i] + e1_poly[i]) % LWE_Q for i in range(LWE_N)]
+
+        br_poly = _poly_mul_mod(b_poly, r_poly)
+        v_poly = []
+        for i in range(LWE_N):
+            bit = (m_bytes[i // 8] >> (i % 8)) & 1
+            v_i = (br_poly[i] + e2_poly[i] + (LWE_HALF_Q * bit)) % LWE_Q
+            v_poly.append(v_i)
+
+        # 3. Combine Classical ECDH + Post-Quantum LWE via HKDF-SHA512
+        transcript_hash = hashlib.sha3_256(
+            eph_ecc_pub_bytes + bytes(str(u_poly) + str(v_poly), "ascii")
+        ).digest()
+
+        hkdf = HKDF(
+            algorithm=hashes.SHA512(),
+            length=32,
+            salt=transcript_hash,
+            info=b"AEGIS-PQ-HYBRID-MLKEM-X25519-v1"
+        )
+        hybrid_secret = hkdf.derive(z_ecc + m_bytes)
+
+        ct_obj = {
+            "alg": "AEGIS-PQ-CT-v1",
+            "epk": eph_ecc_pub_bytes.hex(),
+            "u": u_poly,
+            "v": v_poly
+        }
+        ct_b64 = "AEGIS-PQCT-v1:" + base64.b64encode(json.dumps(ct_obj, separators=(",", ":")).encode()).decode()
+        return ct_b64, hybrid_secret.hex()
+
+    @staticmethod
+    def decapsulate(ciphertext_armored: str, private_key_armored: str) -> str:
+        """
+        Decapsulates a PQ-Hybrid Ciphertext Capsule and recovers the 256-bit Hybrid Shared Secret.
+        Returns: shared_secret_hex_64
+        """
+        clean_ct = ciphertext_armored.strip()
+        clean_sk = private_key_armored.strip()
+        if not clean_ct.startswith("AEGIS-PQCT-v1:") or not clean_sk.startswith("AEGIS-PQSK-v1:"):
+            raise ValueError("Invalid PQ-Hybrid Ciphertext or Private Key header.")
+
+        ct_obj = json.loads(base64.b64decode(clean_ct[len("AEGIS-PQCT-v1:"):]).decode())
+        sk_obj = json.loads(base64.b64decode(clean_sk[len("AEGIS-PQSK-v1:"):]).decode())
+
+        eph_ecc_pub_bytes = bytes.fromhex(ct_obj["epk"])
+        u_poly = ct_obj["u"]
+        v_poly = ct_obj["v"]
+        s_poly = sk_obj["s"]
+
+        if len(u_poly) != LWE_N or len(v_poly) != LWE_N or len(s_poly) != LWE_N:
+            raise ValueError("Invalid LWE polynomial dimension.")
+
+        # 1. Classical X25519 ECDH recovery
+        ecc_priv = x25519.X25519PrivateKey.from_private_bytes(bytes.fromhex(sk_obj["ecc_priv"]))
+        eph_ecc_pub = x25519.X25519PublicKey.from_public_bytes(eph_ecc_pub_bytes)
+        z_ecc = ecc_priv.exchange(eph_ecc_pub)
+
+        # 2. Ring-LWE Decapsulation: d(X) = v(X) - u(X)*s(X) mod (X^256+1, 3329)
+        us_poly = _poly_mul_mod(u_poly, s_poly)
+        m_bytes = bytearray(32)
+        for i in range(LWE_N):
+            d_i = (v_poly[i] - us_poly[i]) % LWE_Q
+            # Closest to 1665 vs 0 (mod 3329)
+            dist_to_half = abs(d_i - LWE_HALF_Q)
+            bit = 1 if dist_to_half < (LWE_Q // 4) else 0
+            if bit:
+                m_bytes[i // 8] |= (1 << (i % 8))
+
+        # 3. Derive identical 256-bit Hybrid Shared Secret via HKDF-SHA512
+        transcript_hash = hashlib.sha3_256(
+            eph_ecc_pub_bytes + bytes(str(u_poly) + str(v_poly), "ascii")
+        ).digest()
+
+        hkdf = HKDF(
+            algorithm=hashes.SHA512(),
+            length=32,
+            salt=transcript_hash,
+            info=b"AEGIS-PQ-HYBRID-MLKEM-X25519-v1"
+        )
+        hybrid_secret = hkdf.derive(z_ecc + bytes(m_bytes))
+        return hybrid_secret.hex()
+

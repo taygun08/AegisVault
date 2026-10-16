@@ -212,7 +212,21 @@ TRANSLATIONS = {
         "audit_zeroize_complete": "Askeri sıfırlama tamamlandı. Uygulama kapatılıyor.",
         
         # Cryptography Guide
-        "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu"
+        "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu",
+        
+        # 2FA Keyfile, Post-Quantum KEM & Dead-Man's Switch
+        "keyfile_select_btn": "🔑 2FA Anahtar Dosyası (USB Keyfile) Seç",
+        "keyfile_gen_btn": "✨ Yeni 512-Bit .akey Üret",
+        "keyfile_none_lbl": "⚪ 2FA Keyfile: Seçilmedi (İsteğe Bağlı)",
+        "keyfile_selected_lbl": "🟢 2FA Keyfile Aktif: {fname}",
+        "keyfile_gen_success": "512-bit CSPRNG 2FA Anahtar Dosyası üretildi ve seçildi:\n{path}\n\nSHA3-256 Parmak İzi: {digest}...\n(Bu dosyayı USB belleğinizde saklayın!)",
+        "btn_pq_handshake": "⚛️ PQ-KEM Kuantum El Sıkışması",
+        "dms_card_title": "💀 Ölü Adamın Anahtarı (Dead-Man's Switch) & Kaba Kuvvet İmha Kalkanı",
+        "dms_card_desc": "Belirlenen gün boyunca kasaya giriş yapılmazsa veya ardışık hatalı parola sınırı aşılırsa kasa DoD 5220.22-M (3-Geçişli) protokolüyle otomatik olarak imha edilir.",
+        "dms_inactivity_lbl": "⏱️ İnaktivite İmha Süresi (Gün):",
+        "dms_bruteforce_lbl": "💥 Hatalı Parola İmha Sınırı:",
+        "dms_save_btn": "🛡️ İmha Politikalarını Kaydet",
+        "dms_saved_msg": "Ölü Adamın Anahtarı ({dms} gün) ve Kaba Kuvvet İmha Sınırı ({bf} deneme) başarıyla mühürlendi!"
     },
     
     "en": {
@@ -417,7 +431,21 @@ TRANSLATIONS = {
         "audit_zeroize_complete": "Military zeroization complete. Terminating application.",
         
         # Cryptography Guide
-        "security_info_title": "🛡️ Military Cryptography Guide"
+        "security_info_title": "🛡️ Military Cryptography Guide",
+        
+        # 2FA Keyfile, Post-Quantum KEM & Dead-Man's Switch
+        "keyfile_select_btn": "🔑 Select 2FA Keyfile (USB Token)",
+        "keyfile_gen_btn": "✨ Generate 512-Bit .akey",
+        "keyfile_none_lbl": "⚪ 2FA Keyfile: None Selected (Optional)",
+        "keyfile_selected_lbl": "🟢 2FA Keyfile Armed: {fname}",
+        "keyfile_gen_success": "512-bit CSPRNG 2FA Keyfile generated and armed:\n{path}\n\nSHA3-256 Fingerprint: {digest}...\n(Keep this file on a secure USB flash drive!)",
+        "btn_pq_handshake": "⚛️ PQ-KEM Quantum Handshake",
+        "dms_card_title": "💀 Dead-Man's Switch & Scorched-Earth Brute-Force Shield",
+        "dms_card_desc": "Automatically shreds the vault via DoD 5220.22-M (3-Pass) sanitization if no check-in occurs within the configured days or if consecutive failed password attempts reach the threshold.",
+        "dms_inactivity_lbl": "⏱️ Inactivity Auto-Wipe (Days):",
+        "dms_bruteforce_lbl": "💥 Brute-Force Wipe Limit:",
+        "dms_save_btn": "🛡️ Seal Zeroization Policy",
+        "dms_saved_msg": "Dead-Man's Switch ({dms} days) and Brute-Force Wipe Limit ({bf} attempts) sealed!"
     },
     
     "ru": {
@@ -622,7 +650,21 @@ TRANSLATIONS = {
         "audit_zeroize_complete": "Военное уничтожение завершено. Приложение закрывается.",
         
         # Cryptography Guide
-        "security_info_title": "🛡️ Справочник по криптографии"
+        "security_info_title": "🛡️ Справочник по криптографии",
+        
+        # 2FA Keyfile, Post-Quantum KEM & Dead-Man's Switch
+        "keyfile_select_btn": "🔑 Выбрать 2FA Ключ-файл (USB Token)",
+        "keyfile_gen_btn": "✨ Создать 512-Бит .akey",
+        "keyfile_none_lbl": "⚪ 2FA Ключ-файл: Не выбран (Опционально)",
+        "keyfile_selected_lbl": "🟢 2FA Ключ-файл активен: {fname}",
+        "keyfile_gen_success": "512-битный 2FA Ключ-файл создан и подключен:\n{path}\n\nSHA3-256 Отпечаток: {digest}...\n(Храните этот файл на защищенном USB-носителе!)",
+        "btn_pq_handshake": "⚛️ PQ-KEM Квантовый Обмен",
+        "dms_card_title": "💀 Переключатель Мертвеца (Dead-Man's Switch) & Защита от Brute-Force",
+        "dms_card_desc": "Автоматически уничтожает хранилище по стандарту DoD 5220.22-M (3 прохода) при отсутствии входа в течение заданных дней или при превышении лимита неверных паролей.",
+        "dms_inactivity_lbl": "⏱️ Авто-уничтожение при бездействии (Дни):",
+        "dms_bruteforce_lbl": "💥 Лимит ошибок пароля:",
+        "dms_save_btn": "🛡️ Сохранить политику уничтожения",
+        "dms_saved_msg": "Переключатель мертвеца ({dms} дн.) и лимит ошибок ({bf}) успешно сохранены!"
     }
 }
 

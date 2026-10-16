@@ -73,16 +73,15 @@ flowchart TD
 * **Defeating Physical Coercion (*The \$5 Wrench Attack*):** Each profile supports an optional secondary **Duress Password**.
 * **Zero UI Leakage:** Unlocking with the duress password decrypts an isolated `_decoy.mvat` container pre-populated with innocuous credentials. The application interface renders the exact same green **`● AES-256-GCM | ACTIVE`** status badge and logs an identical `VAULT_UNLOCK` audit event—making it mathematically and visually impossible for an adversary to detect that a secondary vault is active.
 
-### 3. 💻 Hardware Fingerprint Binding ([`vault_storage.py`](vault_storage.py))
-* Optional machine-binding mixes a deterministic 96-bit SHA-256 hardware fingerprint (`|HW:<digest>`) derived from the host architecture and node identity into the `scrypt` password input.
-* Even if an attacker exfiltrates the `.mvat` file **and** knows the master password, decryption fails on any foreign machine.
+### 3. 💻 Hardware Fingerprint & 🔑 512-Bit 2FA USB Keyfile Binding ([`vault_storage.py`](vault_storage.py))
+* **Hardware Fingerprint Binding:** Optional machine-binding mixes a deterministic 96-bit SHA-256 hardware fingerprint (`|HW:<digest>`) derived from the host architecture and node identity into the `scrypt` password input.
+* **512-Bit CSPRNG 2FA USB Keyfile (`.akey`):** Users can generate a 512-bit hardware-random cryptographic token (`.akey`) stored on an external USB flash drive (or select any existing keyfile). Its 256-bit `SHA3-256` digest (`|KF:<digest>`) is mixed into the `scrypt` key derivation, enforcing true multi-factor physical authentication.
 
-### 4. 💬 Global Serverless E2EE P2P Chat & Tactical File Drop ([`live_p2p_chat.py`](live_p2p_chat.py), [`crypto_chat.py`](crypto_chat.py))
-* **Zero-Configuration Worldwide Relay:** Connects peers across NATs/firewalls globally without port forwarding or IP exposure via MQTT over client-side **AES-256-GCM** tunnels.
+### 4. 💬 Global Serverless E2EE P2P Chat & ⚛️ Post-Quantum Hybrid KEM ([`live_p2p_chat.py`](live_p2p_chat.py), [`crypto_utils.py`](crypto_utils.py))
+* **Zero-Knowledge Blinded MQTT Topics:** Room names are never transmitted in plaintext to the relay broker. Instead, peers derive a blinded topic path via `HMAC-SHA256(room_key, "AEGIS-ZK-ROOM-v3:" + room_name)`, preventing metadata harvesting or topic flooding by outsiders.
+* **⚛️ Post-Quantum Hybrid KEM Ratcheting (`X25519 + Ring-LWE`):** One-click **PQ-KEM Quantum Handshake** performs an ephemeral key exchange combining classical **X25519 ECDH** with lattice-based **Ring-LWE over $\mathbb{Z}_{3329}[X]/(X^{256}+1)$** (NIST FIPS 203 ML-KEM prime $q=3329$) and **HKDF-SHA512**, ratcheting the session key against *Harvest Now, Decrypt Later* quantum adversaries.
 * **Cryptographic Anti-Replay Defense:** Each message envelope embeds a 128-bit CSPRNG `nonce` and Unix `epoch`. Peers enforce a 512-entry sliding-window deduplication cache and a $\pm 600\text{s}$ freshness window, silently dropping replayed ciphertexts.
-* **⏱️ 30-Second Burn-After-Reading:** Ephemeral tactical messages (`[BURNT-30]`) self-destruct from both the GUI DOM and RAM history array exactly 30 seconds after reception.
-* **📎 Encrypted File Drop:** End-to-end encrypted binary file transfer (`[FILE-DROP]`) directly inside the chat stream.
-* **Persistent Session State:** Navigating across vault, portfolio, or steganography tabs preserves the live socket connection and message stream without interruption.
+* **⏱️ 30-Second Burn-After-Reading & 📎 Encrypted File Drop:** Ephemeral tactical messages (`[BURNT-30]`) self-destruct after 30 seconds, while `[FILE-DROP]` transfers end-to-end encrypted binary files with strict path-traversal sanitization.
 
 ### 5. 📲 Air-Gapped Optical QR & LSB Image Steganography ([`airgap_crypto.py`](airgap_crypto.py), [`steganography.py`](steganography.py))
 * **Optical QR Transceiver:** Encodes AES-256-GCM ciphertexts into high-density optical QR matrices for transmission across physically air-gapped machines (no Wi-Fi, Bluetooth, or USB). Decodes incoming QR frames via OpenCV (`cv2.QRCodeDetector`) with Unicode-safe `numpy.fromfile` I/O.
@@ -95,17 +94,20 @@ flowchart TD
 * Validates public wallet address formats and checksums (**Bitcoin** Legacy/P2SH/Bech32/Taproot, **Ethereum** EIP-55 hex, **Solana** Base58) without ever requesting private keys.
 * Queries live on-chain Bitcoin balances from `blockchain.info` and real-time `BTCUSDT`, `ETHUSDT`, `SOLUSDT`, and dynamic `USDTTRY` exchange rates from the Binance REST API on non-blocking background threads.
 
-### 8. 🛡️ FIPS 140-3 POST, Merkle Audit Trail & Emergency Zeroization ([`military_audit.py`](military_audit.py))
-* **Power-On Self-Tests (POST):** At startup, executes 4 deterministic Known-Answer Tests (KAT) before allowing vault operations:
+### 8. 🛡️ FIPS 140-3 POST, Dead-Man's Switch & Scorched-Earth Zeroization ([`military_audit.py`](military_audit.py), [`vault_storage.py`](vault_storage.py))
+* **6-Vector Power-On Self-Tests (POST):** At startup, executes 6 deterministic Known-Answer & Integrity Tests before allowing vault operations:
   1. **NIST SP 800-38D AES-256-GCM KAT**
   2. **`scrypt` Memory-Hard KDF Determinism Test**
   3. **OS CSPRNG Hardware Entropy Health Check**
   4. **Shamir $\mathbb{F}_{257}$ Lagrange Polynomial Reconstruction KAT**
-* **Tamper-Evident Merkle Audit Trail:** Chains every security event (`POST_BOOT`, `VAULT_UNLOCK`, `AUTH_FAILURE`, `VAULT_LOCK`, `EMERGENCY_ZEROIZE`) with SHA-256 hashes ($H_i = \text{SHA256}(\text{Index}_i \parallel \text{Timestamp}_i \parallel \text{Event}_i \parallel H_{i-1})$).
-* **DoD 5220.22-M Emergency Zeroization & Panic Hotkey:**
-  * **`Ctrl + Shift + L` Global Panic Hotkey:** Instantly locks the vault, terminates P2P sockets, clears RAM keys, and scrubs the system clipboard.
-  * **30-Second Clipboard Auto-Scrubber:** Automatically wipes copied secrets from the OS clipboard after 30 seconds.
-  * **Emergency Shredder:** Multi-pass overwrite (CSPRNG random bytes followed by zero bytes) and unlink of vault files on disk.
+  5. **Post-Quantum Hybrid KEM (`X25519 + Ring-LWE q=3329`) Roundtrip KAT**
+  6. **Zero-Trust Anti-Backdoor AST Scanner & `SHA3-256` Runtime Codebase Shield**
+* **💀 Dead-Man's Switch & Scorched-Earth Brute-Force Wipe:**
+  * Configurable **Inactivity Auto-Wipe Timer** (`7 / 30 / 90 / 180 Days`) and **Persistent Brute-Force Self-Destruct Threshold** (`10 / 15 / 25 Attempts`) sealed on disk with a hardware-bound `HMAC-SHA256` tag.
+  * When triggered, automatically executes **3-Pass DoD 5220.22-M sanitization** (`0x00` zeroes, `0xFF` complement, CSPRNG stream + `os.fsync`) and shreds the vault files.
+* **Tamper-Evident Merkle Audit Trail & Panic Controls:**
+  * Chains every security event with SHA-256 hashes ($H_i = \text{SHA256}(\text{Index}_i \parallel \text{Timestamp}_i \parallel \text{Event}_i \parallel H_{i-1})$).
+  * **`Ctrl + Shift + L` Global Panic Hotkey** & **30-Second Clipboard Auto-Scrubber** immediately purge secrets from RAM and the OS clipboard.
 
 ---
 
@@ -141,6 +143,17 @@ Rejection sampling ensures $P(x) \in [0, 255]$ for all share coordinates $x \in 
 $$a_0 = P(0) = \left( \sum_{i=0}^{K-1} y_i \prod_{\substack{j=0 \\ j \neq i}}^{K-1} \left( -x_j \right) \cdot \left( x_i - x_j \right)^{-1} \right) \bmod 257$$
 
 where $\left(x_i - x_j\right)^{-1} \equiv \left(x_i - x_j\right)^{255} \pmod{257}$ via Fermat's Little Theorem (`pow(den, -1, 257)`).
+
+### 4. Post-Quantum Hybrid Key Encapsulation ($\mathcal{R}_{3329} = \mathbb{Z}_{3329}[X]/(X^{256}+1)$ + X25519)
+To protect against Shor's algorithm on future quantum computers, `PQHybridKEM` operates over the cyclotomic polynomial ring $\mathcal{R}_q = \mathbb{Z}_{3329}[X]/(X^{256}+1)$ with $q = 3329$ and bounded ternary secrets $s, e, r, e_1, e_2 \in \{-1, 0, 1\}^{256}$:
+
+$$b(X) = a(X) \cdot s(X) + e(X) \pmod{X^{256}+1, 3329}$$
+
+$$u(X) = a(X) \cdot r(X) + e_1(X), \quad v(X) = b(X) \cdot r(X) + e_2(X) + \left\lfloor \frac{q}{2} \right\rceil \cdot m(X)$$
+
+Because $\|e \cdot r - s \cdot e_1 + e_2\|_\infty \le 513 < \lfloor q/4 \rfloor = 832$, decapsulation of the 256-bit quantum secret $m$ has **zero mathematical failure probability** and is combined with classical X25519 ECDH via `HKDF-SHA512`:
+
+$$K_{\text{PQ}} = \text{HKDF-SHA512}\left(Z_{\text{X25519}} \parallel m, \text{salt}=\text{SHA3-256}(\text{transcript})\right)$$
 
 ---
 
@@ -179,14 +192,16 @@ Embedded across the first $11 \times 8 = 88$ RGB channel bytes ($b_{\text{new}} 
 
 | Threat Vector | Adversary Capability | AegisVault Countermeasure |
 | :--- | :--- | :--- |
-| **Offline GPU/ASIC Cracking** | Stolen `.mvat` file + multi-GPU hashcat cluster | `scrypt` ($N=32768, r=8, p=1$) forces 32 MB RAM per guess + optional 96-bit Hardware Fingerprint binding. |
+| **Quantum Decryption (CRQC)** | *Harvest Now, Decrypt Later* via Shor's/Grover's | **Post-Quantum Hybrid KEM** (`X25519 + Ring-LWE q=3329 + HKDF-SHA512`) + 256-bit AES-GCM. |
+| **Offline GPU/ASIC Cracking** | Stolen `.mvat` file + multi-GPU hashcat cluster | `scrypt` (32 MB RAM/guess) + **96-bit Hardware Binding** + **512-bit 2FA USB Keyfile (`.akey`)**. |
+| **Persistent Brute-Force / Seizure** | Repeated offline/online password guessing or prolonged seizure | **Dead-Man's Switch** (7–180d inactivity wipe) + **Scorched-Earth Brute-Force Wipe** (3-pass DoD 5220.22-M). |
 | **Physical Coercion (\$5 Wrench)** | Attacker forces user to unlock vault in person | **Duress Password** opens realistic Decoy Vault with identical UI badges and identical audit trail logs. |
 | **Sudden Physical Intrusion** | Shoulder-surfing or device seizure while unlocked | **`Ctrl+Shift+L` Panic Hotkey** + 120s inactivity auto-lock immediately wipes RAM keys and system clipboard. |
 | **Clipboard Malware / Stealers** | Background spyware monitoring OS clipboard | **30-Second Ephemeral Clipboard Scrubber** automatically purges copied secrets after 30s or upon vault lock. |
-| **Network MITM & Replay** | Compromised MQTT broker or ISP packet sniffing | Client-side AES-256-GCM + 128-bit CSPRNG `nonce` deduplication cache + $\pm 600\text{s}$ timestamp window. |
+| **Network MITM, Replay & Metadata** | Compromised MQTT broker or ISP packet sniffing | **Zero-Knowledge HMAC-Blinded Topics** + AES-256-GCM + 128-bit CSPRNG `nonce` replay cache. |
+| **Supply-Chain / RCE / Backdoors** | Malicious update redirection or code injection | **HTTPS Domain Allowlist + PE `MZ` & SHA-256 Check** + **Boot-Time AST Anti-Backdoor & `SHA3-256` Shield**. |
 | **Malformed Packet OOM DoS** | Attacker sends crafted header with $r=2^{30}$ | Strict pre-authentication bounds check ($\log_2 N \le 20, r \le 32, p \le 16$, RAM $\le 512\text{ MB}$). |
 | **Forensic Disk Inspection** | Deep inspection for encrypted containers | **LSB Image Steganography** conceals AES-256-GCM ciphertexts inside ordinary lossless PNG photographs. |
-| **Ciphertext Bit-Flipping** | Hex editing of `.mvat` or audit trail records | 128-bit GCM `GHASH` tag with Header AAD + SHA-256 Merkle hash-chained event blocks. |
 
 ---
 

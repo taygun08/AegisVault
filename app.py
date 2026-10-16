@@ -220,7 +220,76 @@ class AegisVaultApp(ctk.CTk):
             font=ctk.CTkFont(size=11),
             text_color="#38bdf8"
         )
-        hw_chk.pack(pady=8)
+        hw_chk.pack(pady=(6, 4))
+
+        # 2FA USB Keyfile / Hardware Token Controls
+        self.selected_keyfile_path = None
+        kf_row = ctk.CTkFrame(frame, fg_color="transparent")
+        kf_row.pack(pady=2)
+
+        kf_status_lbl = ctk.CTkLabel(
+            frame,
+            text=get_text("keyfile_none_lbl"),
+            font=ctk.CTkFont(size=11),
+            text_color="#94a3b8"
+        )
+
+        def pick_setup_keyfile():
+            fpath = filedialog.askopenfilename(
+                title=get_text("keyfile_select_btn"),
+                filetypes=[("Aegis 2FA Keyfile", "*.akey"), ("All Files", "*.*")]
+            )
+            if fpath:
+                self.selected_keyfile_path = fpath
+                kf_status_lbl.configure(
+                    text=get_text("keyfile_selected_lbl", fname=os.path.basename(fpath)),
+                    text_color="#4ade80"
+                )
+
+        def generate_new_keyfile():
+            dest = filedialog.asksaveasfilename(
+                defaultextension=".akey",
+                initialfile="aegis_2fa_token.akey",
+                filetypes=[("Aegis 2FA Keyfile", "*.akey")],
+                title=get_text("keyfile_gen_btn")
+            )
+            if dest:
+                digest = vault_storage.generate_keyfile(dest)
+                self.selected_keyfile_path = dest
+                kf_status_lbl.configure(
+                    text=get_text("keyfile_selected_lbl", fname=os.path.basename(dest)),
+                    text_color="#4ade80"
+                )
+                messagebox.showinfo(
+                    "2FA Keyfile Ready",
+                    get_text("keyfile_gen_success", path=dest, digest=digest[:16])
+                )
+
+        ctk.CTkButton(
+            kf_row,
+            text=get_text("keyfile_select_btn"),
+            fg_color="#1e293b",
+            hover_color="#334155",
+            text_color="#38bdf8",
+            height=28,
+            width=195,
+            font=ctk.CTkFont(size=11),
+            command=pick_setup_keyfile
+        ).pack(side="left", padx=3)
+
+        ctk.CTkButton(
+            kf_row,
+            text=get_text("keyfile_gen_btn"),
+            fg_color="#065f46",
+            hover_color="#047857",
+            text_color="#a7f3d0",
+            height=28,
+            width=195,
+            font=ctk.CTkFont(size=11),
+            command=generate_new_keyfile
+        ).pack(side="left", padx=3)
+
+        kf_status_lbl.pack(pady=(0, 4))
 
         gen_btn = ctk.CTkButton(
             frame,
@@ -234,7 +303,7 @@ class AegisVaultApp(ctk.CTk):
         gen_btn.pack(pady=4)
 
         btn_box = ctk.CTkFrame(frame, fg_color="transparent")
-        btn_box.pack(pady=(12, 25), fill="x", padx=35)
+        btn_box.pack(pady=(8, 20), fill="x", padx=35)
 
         create_btn = ctk.CTkButton(
             btn_box,
@@ -242,7 +311,7 @@ class AegisVaultApp(ctk.CTk):
             font=ctk.CTkFont(size=13, weight="bold"),
             fg_color="#0284c7",
             hover_color="#0369a1",
-            height=44,
+            height=42,
             command=self._handle_create_profile
         )
         create_btn.pack(fill="x")
@@ -256,9 +325,9 @@ class AegisVaultApp(ctk.CTk):
                 text_color="#94a3b8",
                 hover_color="#334155",
                 command=self.show_unlock_screen,
-                height=30
+                height=28
             )
-            cancel_btn.pack(pady=(8, 0))
+            cancel_btn.pack(pady=(6, 0))
 
     def _generate_suggested_master_pass(self):
         new_pass = vault_storage.generate_secure_password(length=28, use_symbols=True)
@@ -278,6 +347,7 @@ class AegisVaultApp(ctk.CTk):
         p2 = self.setup_pass_confirm.get().strip()
         duress = self.setup_duress_entry.get().strip()
         bind_hw = self.hw_bind_var.get()
+        kf_path = getattr(self, "selected_keyfile_path", None)
 
         if not prof:
             messagebox.showerror("Error", "Please enter a profile name!")
@@ -301,16 +371,22 @@ class AegisVaultApp(ctk.CTk):
             duress_password=duress if duress else None,
             lang=i18n.CURRENT_LANG,
             profile_name=prof,
-            bind_to_hardware=bind_hw
+            bind_to_hardware=bind_hw,
+            keyfile_path=kf_path
         )
-        hw_id = vault_storage.get_hardware_fingerprint() if bind_hw else None
-        self.effective_password = (p1 + f"|HW:{hw_id}") if hw_id else p1
+        eff = p1
+        if bind_hw:
+            eff += f"|HW:{vault_storage.get_hardware_fingerprint()}"
+        if kf_path:
+            eff += f"|KF:{vault_storage.compute_keyfile_digest(kf_path)}"
+        self.effective_password = eff
         self.show_dashboard()
 
     def show_unlock_screen(self):
         """Displays password entry screen for unlocking an existing vault profile."""
         self.clear_container()
         self._add_top_lang_selector(self.container)
+        self.selected_keyfile_path = None
 
         frame = ctk.CTkFrame(self.container, width=500, corner_radius=15, fg_color="#181a1f")
         frame.place(relx=0.5, rely=0.52, anchor="center")
@@ -321,7 +397,7 @@ class AegisVaultApp(ctk.CTk):
             font=ctk.CTkFont(size=24, weight="bold"),
             text_color="#38bdf8"
         )
-        title_lbl.pack(pady=(28, 6), padx=30)
+        title_lbl.pack(pady=(26, 6), padx=30)
 
         info_lbl = ctk.CTkLabel(
             frame,
@@ -330,7 +406,7 @@ class AegisVaultApp(ctk.CTk):
             text_color="#94a3b8",
             justify="center"
         )
-        info_lbl.pack(pady=(0, 16), padx=25)
+        info_lbl.pack(pady=(0, 14), padx=25)
 
         # Profile Selector
         prof_frame = ctk.CTkFrame(frame, fg_color="transparent")
@@ -350,9 +426,43 @@ class AegisVaultApp(ctk.CTk):
         self.unlock_pass_entry = ctk.CTkEntry(
             frame, placeholder_text=get_text("master_pass_placeholder"), show="*", width=380, height=44, font=ctk.CTkFont(size=14)
         )
-        self.unlock_pass_entry.pack(pady=10)
+        self.unlock_pass_entry.pack(pady=(10, 6))
         self.unlock_pass_entry.bind("<Return>", lambda e: self._handle_unlock_vault())
         self.unlock_pass_entry.focus()
+
+        # Optional 2FA Keyfile Selector on Unlock Screen
+        kf_unlock_lbl = ctk.CTkLabel(
+            frame,
+            text=get_text("keyfile_none_lbl"),
+            font=ctk.CTkFont(size=11),
+            text_color="#94a3b8"
+        )
+
+        def pick_unlock_keyfile():
+            fpath = filedialog.askopenfilename(
+                title=get_text("keyfile_select_btn"),
+                filetypes=[("Aegis 2FA Keyfile", "*.akey"), ("All Files", "*.*")]
+            )
+            if fpath:
+                self.selected_keyfile_path = fpath
+                kf_unlock_lbl.configure(
+                    text=get_text("keyfile_selected_lbl", fname=os.path.basename(fpath)),
+                    text_color="#4ade80"
+                )
+
+        kf_btn = ctk.CTkButton(
+            frame,
+            text=get_text("keyfile_select_btn"),
+            font=ctk.CTkFont(size=11),
+            fg_color="#1e293b",
+            hover_color="#334155",
+            text_color="#38bdf8",
+            height=28,
+            width=380,
+            command=pick_unlock_keyfile
+        )
+        kf_btn.pack(pady=(2, 2))
+        kf_unlock_lbl.pack(pady=(0, 6))
 
         unlock_btn = ctk.CTkButton(
             frame,
@@ -364,7 +474,7 @@ class AegisVaultApp(ctk.CTk):
             width=380,
             command=self._handle_unlock_vault
         )
-        unlock_btn.pack(pady=10)
+        unlock_btn.pack(pady=6)
 
         # Add New Profile Button
         new_prof_btn = ctk.CTkButton(
@@ -378,7 +488,7 @@ class AegisVaultApp(ctk.CTk):
             width=380,
             command=self.show_create_profile_screen
         )
-        new_prof_btn.pack(pady=(4, 25))
+        new_prof_btn.pack(pady=(4, 22))
 
     def _handle_unlock_vault(self):
         prof = self.profile_select_menu.get()
@@ -387,7 +497,8 @@ class AegisVaultApp(ctk.CTk):
             return
 
         try:
-            data, is_decoy, eff_pwd = vault_storage.unlock_vault(pwd, profile_name=prof)
+            kf_path = getattr(self, "selected_keyfile_path", None)
+            data, is_decoy, eff_pwd = vault_storage.unlock_vault(pwd, profile_name=prof, keyfile_path=kf_path)
             self.vault_data = data
             self.master_password = pwd
             self.effective_password = eff_pwd
@@ -1318,8 +1429,9 @@ class AegisVaultApp(ctk.CTk):
         if is_file:
             try:
                 f_json = json.loads(text[len("[FILE-DROP]:"):].strip())
-                fname = f_json.get("filename", "file.bin")
-                fsize = f_json.get("size", 0)
+                raw_fname = str(f_json.get("filename", "file.bin"))
+                fname = os.path.basename(raw_fname).replace("\x00", "").strip() or "file.bin"
+                fsize = int(f_json.get("size", 0))
                 b64_content = f_json.get("data", "")
             except Exception:
                 fname = "file.bin"
@@ -1487,7 +1599,7 @@ class AegisVaultApp(ctk.CTk):
             self.p2p_session.on_message = self._on_p2p_msg_received
             self.p2p_session.on_status = self._on_p2p_status_update
 
-        # Row 2: Random Tactical Room Generator, Copy Invite, and Zeroize
+        # Row 2: Random Tactical Room Generator, Copy Invite, PQ-KEM Handshake, and Zeroize
         ctrl_row2 = ctk.CTkFrame(top_conn, fg_color="transparent")
         ctrl_row2.pack(fill="x", padx=15, pady=(2, 10))
 
@@ -1522,18 +1634,27 @@ class AegisVaultApp(ctk.CTk):
                 get_text("chat_alert_invite_copied_msg")
             )
 
+        def trigger_pq_handshake():
+            if not self.p2p_session or not self.p2p_session.is_connected:
+                messagebox.showwarning("Not Connected", get_text("chat_alert_not_connected"))
+                return
+            self.p2p_session.initiate_pq_handshake()
+
         def clear_chat():
             self.p2p_message_history.clear()
             for w in self.p2p_messages_box.winfo_children():
                 w.destroy()
 
-        gen_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_rand_room"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", width=160, height=28, command=gen_random_room)
+        gen_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_rand_room"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#38bdf8", width=145, height=28, command=gen_random_room)
         gen_btn.pack(side="left", padx=3)
 
-        copy_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_copy_invite"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#4ade80", width=150, height=28, command=copy_room_invite)
+        copy_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_copy_invite"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#4ade80", width=140, height=28, command=copy_room_invite)
         copy_btn.pack(side="left", padx=3)
 
-        clr_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_zeroize"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#f87171", width=170, height=28, command=clear_chat)
+        pq_btn = ctk.CTkButton(ctrl_row2, text=get_text("btn_pq_handshake"), font=ctk.CTkFont(size=11, weight="bold"), fg_color="#3b0764", hover_color="#581c87", text_color="#e9d5ff", width=185, height=28, command=trigger_pq_handshake)
+        pq_btn.pack(side="left", padx=3)
+
+        clr_btn = ctk.CTkButton(ctrl_row2, text=get_text("chat_btn_zeroize"), font=ctk.CTkFont(size=11), fg_color="#1e293b", hover_color="#334155", text_color="#f87171", width=155, height=28, command=clear_chat)
         clr_btn.pack(side="left", padx=3)
 
         # Message Stream Box
@@ -2057,6 +2178,57 @@ class AegisVaultApp(ctk.CTk):
 
         ctk.CTkButton(act_box, text=get_text("audit_btn_verify"), fg_color="#0284c7", command=verify_chain, height=36).pack(side="left", padx=4)
         ctk.CTkButton(act_box, text=get_text("audit_btn_zeroize"), fg_color="#7f1d1d", hover_color="#991b1b", command=trigger_zeroize, height=36).pack(side="right", padx=4)
+
+        # Dead-Man's Switch & Scorched-Earth Brute-Force Shield Card
+        dms_card = ctk.CTkFrame(scroll, fg_color="#1c1917", corner_radius=10, border_width=1, border_color="#7f1d1d")
+        dms_card.pack(fill="x", pady=(6, 10))
+
+        ctk.CTkLabel(
+            dms_card,
+            text=get_text("dms_card_title"),
+            font=ctk.CTkFont(size=14, weight="bold"),
+            text_color="#f87171"
+        ).pack(anchor="w", padx=16, pady=(10, 2))
+
+        ctk.CTkLabel(
+            dms_card,
+            text=get_text("dms_card_desc"),
+            font=ctk.CTkFont(size=11),
+            text_color="#d6d3d1",
+            justify="left",
+            wraplength=780
+        ).pack(anchor="w", padx=16, pady=(0, 8))
+
+        cur_policy = vault_storage.get_profile_security_policy(self.selected_profile)
+        dms_row = ctk.CTkFrame(dms_card, fg_color="transparent")
+        dms_row.pack(fill="x", padx=16, pady=(0, 12))
+
+        ctk.CTkLabel(dms_row, text=get_text("dms_inactivity_lbl"), font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 6))
+        dms_menu = ctk.CTkOptionMenu(dms_row, values=["0", "7", "30", "90", "180"], width=80, height=28)
+        dms_menu.set(str(cur_policy.get("dms_days", 0)))
+        dms_menu.pack(side="left", padx=(0, 16))
+
+        ctk.CTkLabel(dms_row, text=get_text("dms_bruteforce_lbl"), font=ctk.CTkFont(size=11, weight="bold")).pack(side="left", padx=(0, 6))
+        bf_menu = ctk.CTkOptionMenu(dms_row, values=["0", "10", "15", "25"], width=80, height=28)
+        bf_menu.set(str(cur_policy.get("max_failed_wipe", 0)))
+        bf_menu.pack(side="left", padx=(0, 16))
+
+        def save_dms_policy():
+            d_val = int(dms_menu.get())
+            b_val = int(bf_menu.get())
+            vault_storage.configure_profile_security_policy(self.selected_profile, d_val, b_val)
+            messagebox.showinfo("Security Policy Sealed", get_text("dms_saved_msg", dms=d_val, bf=b_val))
+            self.render_active_tab()
+
+        ctk.CTkButton(
+            dms_row,
+            text=get_text("dms_save_btn"),
+            fg_color="#dc2626",
+            hover_color="#b91c1c",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            height=28,
+            command=save_dms_policy
+        ).pack(side="right")
 
         log_head = ctk.CTkLabel(scroll, text=get_text("audit_log_title"), font=ctk.CTkFont(size=14, weight="bold"))
         log_head.pack(anchor="w", pady=(10, 4))
