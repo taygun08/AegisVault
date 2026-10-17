@@ -1,4 +1,4 @@
-# 🛡️ AegisVault v4.0.0 — Military-Grade Cold Storage, Air-Gap & P2P Cryptographic Suite
+# 🛡️ AegisVault v4.0.0 — Zero-Trust, Post-Quantum Cold Storage & Air-Gapped Privacy Workstation
 
 [![Version](https://img.shields.io/badge/Version-4.0.0-blue?style=for-the-badge)](https://github.com/yiitpepek/AegisVault/releases)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -65,7 +65,7 @@ flowchart TD
 
 ## 🚀 Core Cryptographic & Tactical Modules
 
-### 1. 🔑 Military-Grade Vault & Binary File Locker ([`military_vault.py`](military_vault.py), [`vault_storage.py`](vault_storage.py))
+### 1. 🔑 Zero-Trust Cold Storage Vault & Binary File Locker ([`military_vault.py`](military_vault.py), [`vault_storage.py`](vault_storage.py))
 * **Authenticated Encryption (AEAD):** Every secret, seed phrase, private key, and embedded binary document (PDF, Office, keystores up to 15 MB) is sealed with **AES-256-GCM** using a unique 96-bit CSPRNG nonce and a 128-bit Galois (`GHASH`) authentication tag.
 * **Header-Bound AAD:** The 45-byte binary header (`MVAULT` magic bytes, version, KDF parameters, 128-bit salt, 96-bit nonce) is cryptographically bound as **Associated Authenticated Data (AAD)**. Modifying a single bit of the KDF cost parameters or header metadata immediately invalidates the GCM tag prior to plaintext release.
 * **One-Click Encrypted `.mvat` Backup & Restore:** Export portable encrypted snapshots or import external profiles directly from the vault toolbar.

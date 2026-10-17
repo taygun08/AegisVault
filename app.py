@@ -1,5 +1,5 @@
 """
-Aegis Vault 4.0 - Military Cryptographic Suite & Secure P2P Ecosystem
+Aegis Vault 4.0 - Zero-Trust, Post-Quantum Cryptographic Suite & Secure P2P Ecosystem
 Features:
 1. Multi-User Profiles (Isolated credentials and encrypted storage per user/machine)
 2. Hardware-Bound Profiles (Hardware fingerprint binding - vault cannot be opened on other PCs)
@@ -50,7 +50,7 @@ class AegisVaultApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("AegisVault 4.0.0 - Military Cryptographic Suite & P2P")
+        self.title("AegisVault 4.0.0 - Zero-Trust Cryptographic Suite & P2P")
         self.geometry("1120x760")
         self.minsize(980, 660)
 
@@ -2148,7 +2148,7 @@ class AegisVaultApp(ctk.CTk):
 
         guide_texts = {
             "tr": [
-                ("🛡️ AES-256-GCM Neden Askeri Standarttır?", 
+                ("🛡️ AES-256-GCM Neden Endüstri ve Devlet Standardıdır?", 
                  "AES-256, ABD Ulusal Güvenlik Ajansı (NSA) tarafından 'Top Secret' düzeyindeki devlet sırlarını korumak için onaylanan CNSA Suite standardıdır. GCM (Galois/Counter Mode) modu ise şifreli metinle birlikte 128-bitlik bir doğrulama etiketi (Auth Tag) üretir. Dosyadaki tek bir harf veya bit değiştirilse dahi sistem bunu fark eder ve işlemi iptal eder."),
                 ("🔒 scrypt ve GPU Brute-Force Direnci", 
                  "Standart SHA-256 veya MD5 algoritmaları bellek kullanmaz; bu yüzden GPU çiftlikleriyle saniyede milyarlarca parola denenebilir. AegisVault'ta kullanılan 'scrypt' algoritması her denemede ~32 MB RAM ayrılmasını zorunlu kılar; GPU'lar bellek darboğazına girer ve kaba kuvvet saldırısı imkansız hale gelir."),
@@ -2160,7 +2160,7 @@ class AegisVaultApp(ctk.CTk):
                  "Anahtar türetimi bilgisayarınızın anakart ve donanım kimliğiyle harmanlanır. Kasa dosyanız çalınıp başka bir bilgisayara götürülse bile doğru parola girilse dahi açılamaz.")
             ],
             "en": [
-                ("🛡️ Why is AES-256-GCM the Military Standard?",
+                ("🛡️ Why is AES-256-GCM the Gold Standard for Encryption?",
                  "AES-256 is certified by the NSA CNSA Suite for protecting Top Secret state secrets. The Galois/Counter Mode (GCM) computes a 128-bit authentication tag alongside the ciphertext. If even a single bit in the file is modified or tampered with, decryption instantly aborts with an integrity fault."),
                 ("🔒 scrypt & GPU Brute-Force Resistance",
                  "Standard hashes like SHA-256 require no memory, allowing GPU clusters to attempt billions of passwords per second. AegisVault utilizes scrypt with memory-hard parameters (~32 MB RAM per attempt), paralyzing GPU/ASIC brute-force dictionary attacks."),

@@ -12,7 +12,7 @@ LANGUAGES = {
 TRANSLATIONS = {
     "tr": {
         # App Header & Navigation
-        "app_title": "AegisVault 4.0.0 - Askeri Düzey Güvenlik & Kripto Ekosistemi",
+        "app_title": "AegisVault 4.0.0 - Zero-Trust & Post-Quantum Kripto İstasyonu",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Destekli Güvenlik Kasası",
         "status_active": "● AES-256-GCM | AKTİF",
         "status_decoy": "● AES-256-GCM | AKTİF",
@@ -24,7 +24,7 @@ TRANSLATIONS = {
         "nav_airgap": "📲 Hava Boşluğu & Steganografi",
         "nav_shamir": "🧩 Shamir (SSS) Yedekleme",
         "nav_bip39": "🔍 BIP-39 Seed Analiz",
-        "nav_audit": "📜 Askeri Olay Günlüğü (Audit)",
+        "nav_audit": "📜 Kriptografik Olay Günlüğü (Merkle Trail)",
         "nav_lock": "🔒 Kasayı Kilitle",
         "btn_check_update": "⚡ Güncellemeleri Denetle",
         "inactivity_notice": "⏱️ 2 dk hareketsizlikte otomatik kilitlenir.",
@@ -74,7 +74,7 @@ TRANSLATIONS = {
         "master_pass_placeholder": "Ana Parola...",
         "confirm_pass_placeholder": "Ana Parolayı Doğrulayın...",
         "duress_pass_placeholder": "Tehdit Parolası (Opsiyonel - Sahte Kasa)...",
-        "btn_suggest_pass": "🎲 Güçlü Askeri Parola Öner",
+        "btn_suggest_pass": "🎲 Yüksek Entropili Parola Öner",
         "btn_create_vault": "KASAYI OLUŞTUR VE BAŞLAT",
         "btn_back_profiles": "← Mevcut Profillere Dön",
         "unlock_title": "🔒 Aegis Vault Kilitli",
@@ -85,7 +85,7 @@ TRANSLATIONS = {
         "modal_add_title": "➕ Kasaya Yeni Veri Ekle",
         "field_title": "Kayıt Başlığı (Örn: Ledger Bitcoin Tohumu)",
         "field_secret": "Gizli Değer / Parola / Seed Phrase:",
-        "btn_generate_pass": "🎲 32 Karakter Askeri Şifre Üret (CSPRNG)",
+        "btn_generate_pass": "🎲 32 Karakter Kriptografik Şifre Üret (CSPRNG)",
         "field_notes": "Ek Notlar (İsteğe bağlı)",
         "btn_save_vault": "KASAYA GÜVENLİ KAYDET",
         "btn_save": "KAYDET",
@@ -117,7 +117,7 @@ TRANSLATIONS = {
         
         # Live P2P Chat
         "p2p_chat_title": "💬 Küresel Uçtan Uca Şifreli Sohbet Ağı (Türkiye ↔ Dünya)",
-        "p2p_chat_desc": "💡 Bu Ne İşe Yarar?\nDünyanın neresinde olursanız olun (Türkiye ↔ İngiltere vb.), port açmaya veya IP yapılandırmasına gerek olmadan anında canlı ve uçtan uca AES-256-GCM şifreli iletişim kurar. Ortak 'Oda Adı' ve 'Oda Şifresi' belirlemeniz yeterlidir. İletilen tüm veri askeri kripto ile zırhlandığı için aracı sunucu yalnızca anlamsız şifreli metin (AEGIS-MSG-v1:...) görür.",
+        "p2p_chat_desc": "💡 Bu Ne İşe Yarar?\nDünyanın neresinde olursanız olun (Türkiye ↔ İngiltere vb.), port açmaya veya IP yapılandırmasına gerek olmadan anında canlı ve uçtan uca AES-256-GCM şifreli iletişim kurar. Ortak 'Oda Adı' ve 'Oda Şifresi' belirlemeniz yeterlidir. İletilen tüm veri uçtan uca şifreleme ile zırhlandığı için aracı sunucu yalnızca anlamsız şifreli metin (AEGIS-MSG-v1:...) görür.",
         "btn_chat_connect": "🟢 Odaya Bağlan (Dünya Çapı)",
         "btn_chat_disconnect": "🔴 Odadan Ayrıl",
         "chat_nick": "Rumuz:",
@@ -134,9 +134,9 @@ TRANSLATIONS = {
         "chat_status_connecting": "🟡 Küresel ağa bağlanılıyor (Türkiye ↔ Dünya)...",
         "chat_status_connected": "🟢 Odaya Bağlanıldı: '{room}' | AES-256-GCM Şifreleme Aktif!",
         "chat_status_left": "🔴 Sohbet odası bağlantısı kesildi.",
-        "chat_invite_template": "🛡️ AegisVault Askeri Güvenli Sohbet Daveti\n━━━━━━━━━━━━━━━━━━━━━\n📡 Oda Adı: {room}\n🔑 Oda Şifresi: {key}\n━━━━━━━━━━━━━━━━━━━━━\n(AegisVault uygulamasında bu bilgileri girip 'Odaya Bağlan' butonuna basın).",
+        "chat_invite_template": "🛡️ AegisVault ZK Güvenli Sohbet Daveti\n━━━━━━━━━━━━━━━━━━━━━\n📡 Oda Adı: {room}\n🔑 Oda Şifresi: {key}\n━━━━━━━━━━━━━━━━━━━━━\n(AegisVault uygulamasında bu bilgileri girip 'Odaya Bağlan' butonuna basın).",
         "chat_alert_room_ready_title": "Oda Hazır",
-        "chat_alert_room_ready_msg": "🎲 Yeni Güvenli Oda ve Askeri Parola Üretildi!\n\nOda Adı: {room}\nOda Şifresi: {key}\n\nŞimdi '📋 Daveti Kopyala' butonuna basarak arkadaşınıza gönderebilirsiniz.",
+        "chat_alert_room_ready_msg": "🎲 Yeni Güvenli Oda ve Şifreleme Anahtarı Üretildi!\n\nOda Adı: {room}\nOda Şifresi: {key}\n\nŞimdi '📋 Daveti Kopyala' butonuna basarak arkadaşınıza gönderebilirsiniz.",
         "chat_alert_invite_copied_title": "Kopyalandı",
         "chat_alert_invite_copied_msg": "Oda davet bilgileri panoya kopyalandı!\nArkadaşınıza gönderip aynı bilgilerle odaya bağlanmasını sağlayabilirsiniz.",
         "chat_alert_not_connected": "Henüz bir odaya bağlı değilsiniz! Lütfen önce 'Odaya Bağlan' butonuna basın.",
@@ -209,10 +209,10 @@ TRANSLATIONS = {
         "audit_log_title": "📜 Kriptografik Olay Akışı (Tamper-Evident Merkle Trail):",
         "audit_zeroize_confirm_1": "DİKKAT: '{profile}' profili ve diskteki şifreli dosyalar rastgele baytlarla (DoD 5220.22-M) kalıcı olarak imha edilecektir.\nBu işlem GERİ ALINAMAZ!\n\nDevam edilsin mi?",
         "audit_zeroize_confirm_2": "Tüm anahtarlar ve veriler tamamen yok edilecek. Emin misiniz?",
-        "audit_zeroize_complete": "Askeri sıfırlama tamamlandı. Uygulama kapatılıyor.",
+        "audit_zeroize_complete": "DoD 5220.22-M kriptografik imha tamamlandı. Uygulama kapatılıyor.",
         
         # Cryptography Guide
-        "security_info_title": "🛡️ Askeri Kriptografi Kılavuzu",
+        "security_info_title": "🛡️ Kriptografi ve Güvenlik Mimarisi Kılavuzu",
         
         # 2FA Keyfile, Post-Quantum KEM & Dead-Man's Switch
         "keyfile_select_btn": "🔑 2FA Anahtar Dosyası (USB Keyfile) Seç",
@@ -231,7 +231,7 @@ TRANSLATIONS = {
     
     "en": {
         # App Header & Navigation
-        "app_title": "AegisVault 4.0.0 - Military Security & Crypto Suite",
+        "app_title": "AegisVault 4.0.0 - Zero-Trust Cryptographic Suite & P2P",
         "tagline": "AES-256-GCM + scrypt (BIP-38) Encrypted Vault",
         "status_active": "● AES-256-GCM | ACTIVE",
         "status_decoy": "● AES-256-GCM | ACTIVE",
@@ -243,7 +243,7 @@ TRANSLATIONS = {
         "nav_airgap": "📲 Air-Gap & Steganography",
         "nav_shamir": "🧩 Shamir (SSS) Backup",
         "nav_bip39": "🔍 BIP-39 Seed Analyzer",
-        "nav_audit": "📜 Military Audit Trail (Hash-Chain)",
+        "nav_audit": "📜 Cryptographic Audit Trail (Merkle Chain)",
         "nav_lock": "🔒 Lock Vault",
         "btn_check_update": "⚡ Check for Updates",
         "inactivity_notice": "⏱️ Auto-locks after 2 min of inactivity.",
@@ -293,7 +293,7 @@ TRANSLATIONS = {
         "master_pass_placeholder": "Master Password...",
         "confirm_pass_placeholder": "Confirm Master Password...",
         "duress_pass_placeholder": "Duress Password (Optional - Decoy Vault)...",
-        "btn_suggest_pass": "🎲 Suggest Military Password",
+        "btn_suggest_pass": "🎲 Suggest High-Entropy Password",
         "btn_create_vault": "CREATE AND INITIALIZE VAULT",
         "btn_back_profiles": "← Back to Existing Profiles",
         "unlock_title": "🔒 Aegis Vault Locked",
@@ -304,7 +304,7 @@ TRANSLATIONS = {
         "modal_add_title": "➕ Add New Secure Secret",
         "field_title": "Title (e.g. Ledger Bitcoin Seed)",
         "field_secret": "Secret / Seed / Private Key:",
-        "btn_generate_pass": "🎲 Generate 32-Char Military Password (CSPRNG)",
+        "btn_generate_pass": "🎲 Generate 32-Char Cryptographic Key (CSPRNG)",
         "field_notes": "Additional Notes (Optional)",
         "btn_save_vault": "SECURELY SAVE TO VAULT",
         "btn_save": "SAVE",
@@ -353,7 +353,7 @@ TRANSLATIONS = {
         "chat_status_connecting": "🟡 Connecting to global relay (Turkey ↔ Worldwide)...",
         "chat_status_connected": "🟢 Connected to Room: '{room}' | AES-256-GCM Tunnel Active!",
         "chat_status_left": "🔴 Disconnected from chat room.",
-        "chat_invite_template": "🛡️ AegisVault Secure Military Chat Invite\n━━━━━━━━━━━━━━━━━━━━━\n📡 Room Name: {room}\n🔑 Room Key: {key}\n━━━━━━━━━━━━━━━━━━━━━\n(Enter these credentials in AegisVault and click 'Connect to Room').",
+        "chat_invite_template": "🛡️ AegisVault ZK Encrypted Chat Invite\n━━━━━━━━━━━━━━━━━━━━━\n📡 Room Name: {room}\n🔑 Room Key: {key}\n━━━━━━━━━━━━━━━━━━━━━\n(Enter these credentials in AegisVault and click 'Connect to Room').",
         "chat_alert_room_ready_title": "Room Ready",
         "chat_alert_room_ready_msg": "🎲 New Secure Room & Tactical Key Generated!\n\nRoom Name: {room}\nRoom Key: {key}\n\nNow click '📋 Copy Room Invite' to send credentials to your peer.",
         "chat_alert_invite_copied_title": "Copied",
@@ -428,10 +428,10 @@ TRANSLATIONS = {
         "audit_log_title": "📜 Cryptographic Event Stream (Tamper-Evident Merkle Trail):",
         "audit_zeroize_confirm_1": "WARNING: Profile '{profile}' and all encrypted vault files will be permanently overwritten with random bytes (DoD 5220.22-M).\nThis action CANNOT BE UNDONE!\n\nProceed?",
         "audit_zeroize_confirm_2": "All keys and data will be permanently destroyed. Are you completely sure?",
-        "audit_zeroize_complete": "Military zeroization complete. Terminating application.",
+        "audit_zeroize_complete": "DoD 5220.22-M cryptographic zeroization complete. Terminating application.",
         
         # Cryptography Guide
-        "security_info_title": "🛡️ Military Cryptography Guide",
+        "security_info_title": "🛡️ Cryptography & Security Architecture Guide",
         
         # 2FA Keyfile, Post-Quantum KEM & Dead-Man's Switch
         "keyfile_select_btn": "🔑 Select 2FA Keyfile (USB Token)",
